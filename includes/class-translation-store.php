@@ -48,7 +48,7 @@ class HTBD_Translation_Store {
 
 		return $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- The custom translation table is the plugin's persistent cache.
 			$wpdb->prepare(
-				"SELECT * FROM %i WHERE identity_key = %s AND status = 'complete' LIMIT 1",
+				"SELECT * FROM %i WHERE identity_key = %s AND status IN ('complete', 'manual') LIMIT 1",
 				self::table_name(),
 				$identity_key
 			),
@@ -78,6 +78,10 @@ class HTBD_Translation_Store {
 		);
 	}
 
+	public function save_manual( $identity_key, $source_language, $target_language, $field_context, $source_fingerprint, $translated_value ) {
+		return $this->save( $identity_key, $source_language, $target_language, $field_context, $source_fingerprint, $translated_value, 'manual' );
+	}
+
 	public function clear( $target_language = '' ) {
 		global $wpdb;
 
@@ -104,7 +108,7 @@ class HTBD_Translation_Store {
 				"SELECT COUNT(*) AS translated_fields, MAX(updated_at) AS last_translated_at
 				FROM %i
 				WHERE target_language = %s
-				AND status = 'complete'
+				AND status IN ('complete', 'manual')
 				AND field_context LIKE %s",
 				self::table_name(),
 				$target_language,
@@ -204,7 +208,7 @@ class HTBD_Translation_Store {
 			$wpdb->prepare( // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- IN clauses contain only generated %s placeholders; the optional clause is a fixed SQL fragment.
 				"SELECT COUNT(DISTINCT CONCAT(target_language, '|', SUBSTRING_INDEX(field_context, ':', 2)))
 				FROM %i
-				WHERE status = 'complete'
+				WHERE status IN ('complete', 'manual')
 				AND target_language IN ({$language_placeholders})
 				AND SUBSTRING_INDEX(field_context, ':', 2) IN ({$context_placeholders}){$since_clause}",
 				array_merge( array( self::table_name() ), $query_args )

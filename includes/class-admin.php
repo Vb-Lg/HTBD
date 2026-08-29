@@ -11,12 +11,105 @@ class HTBD_Admin {
 		add_action( 'admin_post_htbd_clear_translation_cache', array( $this, 'clear_translation_cache' ) );
 		add_action( 'admin_post_htbd_translate_post', array( $this, 'queue_post_translation' ) );
 		add_action( 'admin_post_htbd_retry_failed_translation', array( $this, 'retry_failed_translation' ) );
+		add_action( 'add_meta_boxes', array( $this, 'add_translation_meta_box' ) );
+		add_action( 'save_post', array( $this, 'save_translation_meta_box' ), 30, 3 );
 		add_action( 'wp_ajax_htbd_translation_progress', array( $this, 'translation_progress' ) );
 		add_filter( 'manage_post_posts_columns', array( $this, 'add_translation_column' ) );
 		add_filter( 'manage_page_posts_columns', array( $this, 'add_translation_column' ) );
 		add_action( 'manage_post_posts_custom_column', array( $this, 'render_translation_column' ), 10, 2 );
 		add_action( 'manage_page_posts_custom_column', array( $this, 'render_translation_column' ), 10, 2 );
 		add_filter( 'plugin_action_links_' . plugin_basename( HTBD_FILE ), array( $this, 'add_plugin_settings_link' ) );
+	}
+
+	public function add_translation_meta_box() {
+		foreach ( array( 'post', 'page' ) as $post_type ) {
+			add_meta_box( 'htbd-translation-editor', __( 'Manual translations', 'hyx-translator-for-baidu-translate' ), array( $this, 'render_translation_meta_box' ), $post_type, 'normal', 'default' );
+		}
+	}
+
+	public function render_translation_meta_box( $post ) {
+		wp_nonce_field( 'htbd_save_translation_' . $post->ID, 'htbd_translation_nonce' );
+		$fields = $this->get_post_translation_fields( $post );
+		if ( empty( $fields ) ) {
+			echo '<p>' . esc_html__( 'Generate a translation first, then edit it here.', 'hyx-translator-for-baidu-translate' ) . '</p>';
+			return;
+		}
+		echo '<p class="description">' . esc_html__( 'Changes are saved as manual translations and remain until you explicitly retranslate this content.', 'hyx-translator-for-baidu-translate' ) . '</p>';
+		foreach ( $fields as $language => $language_fields ) {
+			echo '<h4>' . esc_html( strtoupper( $language ) ) . '</h4>';
+			foreach ( $language_fields as $field ) {
+				$input_id = 'htbd-translation-' . md5( $field['context'] );
+				echo '<p><label for="' . esc_attr( $input_id ) . '"><strong>' . esc_html( $field['label'] ) . '</strong></label><textarea class="widefat" rows="' . esc_attr( $field['rows'] ) . '" id="' . esc_attr( $input_id ) . '" name="htbd_translation[' . esc_attr( $language ) . '][' . esc_attr( $field['context'] ) . ']">' . esc_textarea( $field['translated_value'] ) . '</textarea></p>';
+			}
+		}
+	}
+
+	public function save_translation_meta_box( $post_id, $post, $update ) {
+		if ( ! $update || wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) || ! in_array( $post->post_type, array( 'post', 'page' ), true ) || ! current_user_can( 'edit_post', $post_id ) || empty( $_POST['htbd_translation_nonce'] ) ) {
+			return;
+		}
+		check_admin_referer( 'htbd_save_translation_' . $post_id, 'htbd_translation_nonce' );
+		$submitted = isset( $_POST['htbd_translation'] ) ? (array) wp_unslash( $_POST['htbd_translation'] ) : array();
+		$allowed   = $this->get_post_translation_fields( $post );
+		$settings  = HTBD_Settings::get();
+		$provider  = new HTBD_Baidu_Provider( $settings['baidu_app_id'], $settings['baidu_secret_key'] );
+		$store     = new HTBD_Translation_Store();
+		foreach ( $allowed as $language => $language_fields ) {
+			foreach ( $language_fields as $field ) {
+				if ( ! isset( $submitted[ $language ][ $field['context'] ] ) || ! is_string( $submitted[ $language ][ $field['context'] ] ) ) {
+					continue;
+				}
+				$value = 'post_content' === $field['field'] ? wp_kses_post( $submitted[ $language ][ $field['context'] ] ) : sanitize_textarea_field( $submitted[ $language ][ $field['context'] ] );
+				if ( '' === trim( $value ) ) {
+					continue;
+				}
+				$identity = HTBD_Translation_Identity::key( $field['source_value'], $settings['source_language'], $language, $field['context'], $provider->get_version() );
+				$store->save_manual( $identity, $settings['source_language'], $language, $field['context'], HTBD_Translation_Identity::source_fingerprint( $field['source_value'] ), $value );
+			}
+		}
+	}
+
+	private function get_post_translation_fields( $post ) {
+		$settings = HTBD_Settings::get();
+		$definitions = array(
+			'post_title'   => array( 'label' => __( 'Title', 'hyx-translator-for-baidu-translate' ), 'rows' => 2, 'source' => $post->post_title ),
+			'post_excerpt' => array( 'label' => __( 'Excerpt', 'hyx-translator-for-baidu-translate' ), 'rows' => 3, 'source' => $post->post_excerpt ),
+		);
+		if ( '' !== $post->post_content ) {
+			$definitions['post_content'] = array( 'label' => __( 'Content', 'hyx-translator-for-baidu-translate' ), 'rows' => 3, 'source' => $post->post_content );
+		}
+		foreach ( array( 'wpai_meta_description', '_yoast_wpseo_title', '_yoast_wpseo_metadesc', 'rank_math_title', 'rank_math_description' ) as $meta_key ) {
+			$meta_value = get_post_meta( $post->ID, $meta_key, true );
+			if ( is_string( $meta_value ) && '' !== $meta_value ) {
+				$definitions[ 'meta:' . $meta_key ] = array( 'label' => $meta_key, 'rows' => 3, 'source' => $meta_value );
+			}
+		}
+		$result = array();
+		$store = new HTBD_Translation_Store();
+		$provider = new HTBD_Baidu_Provider( $settings['baidu_app_id'], $settings['baidu_secret_key'] );
+		foreach ( $settings['target_languages'] as $language ) {
+			foreach ( $definitions as $field => $definition ) {
+				$segments = 'post_content' === $field ? HTBD_Content_Translator::segments( $definition['source'] ) : array( $definition['source'] );
+				$text_index = 0;
+				foreach ( (array) $segments as $segment ) {
+					if ( 'post_content' === $field ) {
+						if ( HTBD_Content_Translator::is_tag( $segment ) || '' === trim( $segment ) ) { continue; }
+						$source = HTBD_Content_Translator::surrounding_whitespace( $segment )['text'];
+						$context = 'post:' . $post->ID . ':post_content:text:' . $text_index;
+						++$text_index;
+					} else {
+						$source = $segment;
+						$context = 'post:' . $post->ID . ':' . $field;
+					}
+					if ( '' === trim( $source ) ) { continue; }
+					$identity = HTBD_Translation_Identity::key( $source, $settings['source_language'], $language, $context, $provider->get_version() );
+					$translation = $store->find_valid( $identity );
+					if ( empty( $translation['translated_value'] ) ) { continue; }
+					$result[ $language ][] = array( 'field' => $field, 'context' => $context, 'source_value' => $source, 'translated_value' => $translation['translated_value'], 'label' => $definition['label'] . ( 'post_content' === $field ? ' #' . $text_index : '' ), 'rows' => $definition['rows'] );
+				}
+			}
+		}
+		return $result;
 	}
 
 	public function add_settings_page() {

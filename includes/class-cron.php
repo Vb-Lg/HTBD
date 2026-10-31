@@ -138,7 +138,12 @@ class HTBD_Cron {
 		$now    = time();
 
 		if ( ! is_array( $cron ) ) {
-			return array( 'count' => 0, 'next' => 0, 'seen' => array() );
+			return array(
+				'count'   => 0,
+				'next'    => 0,
+				'seen'    => array(),
+				'overdue' => false,
+			);
 		}
 
 		foreach ( $cron as $timestamp => $entries ) {

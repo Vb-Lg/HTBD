@@ -7,6 +7,7 @@ class HTBD_Admin {
 		add_action( 'admin_menu', array( $this, 'add_settings_page' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_settings_assets' ) );
+		add_action( 'admin_notices', array( $this, 'render_admin_notices' ) );
 		add_action( 'admin_post_htbd_queue_existing_translations', array( $this, 'queue_existing_translations' ) );
 		add_action( 'admin_post_htbd_clear_translation_cache', array( $this, 'clear_translation_cache' ) );
 		add_action( 'admin_post_htbd_translate_post', array( $this, 'queue_post_translation' ) );
@@ -19,6 +20,41 @@ class HTBD_Admin {
 		add_action( 'manage_post_posts_custom_column', array( $this, 'render_translation_column' ), 10, 2 );
 		add_action( 'manage_page_posts_custom_column', array( $this, 'render_translation_column' ), 10, 2 );
 		add_filter( 'plugin_action_links_' . plugin_basename( HTBD_FILE ), array( $this, 'add_plugin_settings_link' ) );
+	}
+
+	public function render_admin_notices() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$screen = get_current_screen();
+		if ( ! $screen || 'settings_page_htbd' !== $screen->id ) {
+			return;
+		}
+
+		if ( isset( $_GET['htbd_queued'] ) ) {
+			$queued  = absint( $_GET['htbd_queued'] );
+			$message = sprintf(
+				/* translators: %s: number of queued translation tasks. */
+				_n( '%s translation task has been queued.', '%s translation tasks have been queued.', $queued, 'hyx-translator-for-baidu-translate' ),
+				number_format_i18n( $queued )
+			);
+
+			printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html( $message ) );
+		}
+
+		if ( isset( $_GET['htbd_cache_cleared'] ) ) {
+			$cleared = sanitize_key( wp_unslash( $_GET['htbd_cache_cleared'] ) );
+			$message = '1' === $cleared
+				? __( 'All saved translations have been cleared.', 'hyx-translator-for-baidu-translate' )
+				: sprintf(
+					/* translators: %s: target language code. */
+					__( 'Saved %s translations have been cleared.', 'hyx-translator-for-baidu-translate' ),
+					strtoupper( $cleared )
+				);
+
+			printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html( $message ) );
+		}
 	}
 
 	public function add_translation_meta_box() {

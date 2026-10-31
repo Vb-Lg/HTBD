@@ -5,6 +5,7 @@ defined( 'ABSPATH' ) || exit;
 class HTBD_Uninstaller {
 	private const OPTION_NAMES = array(
 		'htbd_settings',
+		'htbd_db_version',
 		'htbd_flush_rewrite_rules',
 		'htbd_translation_task',
 		'htbd_retranslation_batch',

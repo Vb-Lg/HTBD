@@ -21,6 +21,7 @@ class HTBD_Plugin {
 		$this->content_controller = new HTBD_Content_Controller( new HTBD_Translation_Store(), $this->router );
 		$this->admin              = new HTBD_Admin();
 
+		add_action( 'init', array( 'HTBD_Translation_Store', 'maybe_upgrade' ), 5 );
 		add_action( 'init', array( $this, 'register' ) );
 		add_action( 'update_option_htbd_settings', array( $this, 'refresh_rewrite_rules' ), 10, 2 );
 		add_action( 'update_option_htbd_settings', array( 'HTBD_Settings', 'reset' ), 5 );

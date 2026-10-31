@@ -3,6 +3,9 @@
 defined( 'ABSPATH' ) || exit;
 
 class HTBD_Translation_Store {
+	const DB_VERSION        = 2;
+	const DB_VERSION_OPTION = 'htbd_db_version';
+
 	/**
 	 * Request-level cache of find_valid() lookups. A single page render asks
 	 * for the same title, term, and permalink translations many times.
@@ -37,6 +40,8 @@ class HTBD_Translation_Store {
 			source_language varchar(20) NOT NULL,
 			target_language varchar(20) NOT NULL,
 			field_context varchar(191) NOT NULL,
+			item_type varchar(20) NOT NULL DEFAULT '',
+			item_id bigint(20) unsigned NOT NULL DEFAULT 0,
 			source_fingerprint char(64) NOT NULL,
 			translated_value longtext NULL,
 			status varchar(20) NOT NULL,
@@ -45,10 +50,66 @@ class HTBD_Translation_Store {
 			PRIMARY KEY  (id),
 			UNIQUE KEY identity_key (identity_key),
 			KEY target_language (target_language),
-			KEY source_fingerprint (source_fingerprint)
+			KEY source_fingerprint (source_fingerprint),
+			KEY item_lookup (item_type, item_id, target_language, status)
 		) {$charset_collate};";
 
 		dbDelta( $sql );
+
+		update_option( self::DB_VERSION_OPTION, self::DB_VERSION, false );
+	}
+
+	/**
+	 * Runs the schema upgrade once per version, including on sites that were
+	 * activated before the columns existed.
+	 *
+	 * @return void
+	 */
+	public static function maybe_upgrade() {
+		if ( (int) get_option( self::DB_VERSION_OPTION, 0 ) >= self::DB_VERSION ) {
+			return;
+		}
+
+		self::install();
+		self::backfill_item_columns();
+	}
+
+	/**
+	 * Derives the indexed item columns from the legacy field_context values.
+	 *
+	 * @return void
+	 */
+	private static function backfill_item_columns() {
+		global $wpdb;
+
+		$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-off schema backfill of the plugin-owned table.
+			$wpdb->prepare(
+				"UPDATE %i
+				SET item_type = SUBSTRING_INDEX(field_context, ':', 1),
+					item_id = CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(field_context, ':', 2), ':', -1) AS UNSIGNED)
+				WHERE item_type = '' OR item_id = 0",
+				self::table_name()
+			)
+		);
+	}
+
+	/**
+	 * Splits a field context such as post:12:post_content into its indexed
+	 * parts. Contexts without a numeric ID keep an empty type and a zero ID.
+	 *
+	 * @param string $field_context Field context.
+	 * @return array{0: string, 1: int}
+	 */
+	public static function split_context( $field_context ) {
+		$parts = explode( ':', (string) $field_context );
+		$type  = isset( $parts[0] ) ? sanitize_key( $parts[0] ) : '';
+		$id    = isset( $parts[1] ) ? absint( $parts[1] ) : 0;
+
+		if ( ! in_array( $type, array( 'post', 'term', 'attachment' ), true ) ) {
+			$id = 0;
+		}
+
+		return array( $type, (int) $id );
 	}
 
 	public function find_valid( $identity_key ) {
@@ -76,17 +137,20 @@ class HTBD_Translation_Store {
 		global $wpdb;
 
 		$now = current_time( 'mysql', true );
+		list( $item_type, $item_id ) = self::split_context( $field_context );
 
 		// INSERT ... ON DUPLICATE KEY UPDATE instead of REPLACE so created_at
 		// keeps the first write time and the auto increment value is stable.
 		$result = $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Writes to the plugin-owned persistent translation cache.
 			$wpdb->prepare(
-				"INSERT INTO %i (identity_key, source_language, target_language, field_context, source_fingerprint, translated_value, status, created_at, updated_at)
-				VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+				"INSERT INTO %i (identity_key, source_language, target_language, field_context, item_type, item_id, source_fingerprint, translated_value, status, created_at, updated_at)
+				VALUES (%s, %s, %s, %s, %s, %d, %s, %s, %s, %s, %s)
 				ON DUPLICATE KEY UPDATE
 					source_language = VALUES(source_language),
 					target_language = VALUES(target_language),
 					field_context = VALUES(field_context),
+					item_type = VALUES(item_type),
+					item_id = VALUES(item_id),
 					source_fingerprint = VALUES(source_fingerprint),
 					translated_value = VALUES(translated_value),
 					status = VALUES(status),
@@ -96,6 +160,8 @@ class HTBD_Translation_Store {
 				$source_language,
 				$target_language,
 				$field_context,
+				$item_type,
+				$item_id,
 				$source_fingerprint,
 				$translated_value,
 				$status,
@@ -142,10 +208,11 @@ class HTBD_Translation_Store {
 				FROM %i
 				WHERE target_language = %s
 				AND status IN ('complete', 'manual')
-				AND field_context LIKE %s",
+				AND item_type = 'post'
+				AND item_id = %d",
 				self::table_name(),
 				$target_language,
-				'post:' . absint( $post_id ) . ':%'
+				absint( $post_id )
 			),
 			ARRAY_A
 		);
@@ -171,47 +238,59 @@ class HTBD_Translation_Store {
 	}
 
 	public function get_failed_items( $target_languages, $post_ids, $term_ids, $since = '' ) {
-		global $wpdb;
-
 		$target_languages = array_values( array_filter( array_map( 'sanitize_key', (array) $target_languages ) ) );
-		$item_contexts     = array_merge(
-			array_map(
-				static function ( $post_id ) {
-					return 'post:' . absint( $post_id );
-				},
-				(array) $post_ids
-			),
-			array_map(
-				static function ( $term_id ) {
-					return 'term:' . absint( $term_id );
-				},
-				(array) $term_ids
-			)
+		$failures         = array_merge(
+			$this->get_failed_items_for( 'post', $post_ids, $target_languages, $since ),
+			$this->get_failed_items_for( 'term', $term_ids, $target_languages, $since )
 		);
 
-		if ( empty( $target_languages ) || empty( $item_contexts ) ) {
+		usort(
+			$failures,
+			static function ( $left, $right ) {
+				return strcmp( (string) $right['failed_at'], (string) $left['failed_at'] );
+			}
+		);
+
+		return $failures;
+	}
+
+	/**
+	 * @param string   $item_type        Post or term.
+	 * @param int[]    $item_ids         Item IDs to look at.
+	 * @param string[] $target_languages Target languages.
+	 * @param string   $since            Optional UTC timestamp lower bound.
+	 * @return array<int, array<string, string>>
+	 */
+	private function get_failed_items_for( $item_type, $item_ids, $target_languages, $since ) {
+		global $wpdb;
+
+		$item_ids = array_values( array_filter( array_map( 'absint', (array) $item_ids ) ) );
+
+		if ( empty( $target_languages ) || empty( $item_ids ) ) {
 			return array();
 		}
 
 		$language_placeholders = implode( ',', array_fill( 0, count( $target_languages ), '%s' ) );
-		$context_placeholders  = implode( ',', array_fill( 0, count( $item_contexts ), '%s' ) );
-		$query_args            = array_merge( $target_languages, $item_contexts );
+		$id_placeholders       = implode( ',', array_fill( 0, count( $item_ids ), '%d' ) );
+		$query_args            = array_merge( array( self::table_name(), sanitize_key( $item_type ) ), $target_languages, $item_ids );
+
 		if ( '' !== $since ) {
 			$query_args[] = $since;
 		}
 
 		$since_clause = '' === $since ? '' : ' AND updated_at >= %s';
 
-		return $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Reads task failures from the plugin-owned translation table.
-			$wpdb->prepare( // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- IN clauses contain only generated %s placeholders; the optional clause is fixed SQL.
-				"SELECT target_language, SUBSTRING_INDEX(field_context, ':', 2) AS item_context, MAX(updated_at) AS failed_at
+		return (array) $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Reads task failures from the plugin-owned translation table.
+			$wpdb->prepare( // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- IN clauses contain only generated placeholders; the optional clause is fixed SQL.
+				"SELECT target_language, CONCAT(item_type, ':', item_id) AS item_context, MAX(updated_at) AS failed_at
 				FROM %i
 				WHERE status = 'failed'
+					AND item_type = %s
 					AND target_language IN ({$language_placeholders})
-					AND SUBSTRING_INDEX(field_context, ':', 2) IN ({$context_placeholders}){$since_clause}
-				GROUP BY target_language, item_context
+					AND item_id IN ({$id_placeholders}){$since_clause}
+				GROUP BY target_language, item_id
 				ORDER BY failed_at DESC",
-				array_merge( array( self::table_name() ), $query_args )
+				$query_args
 			),
 			ARRAY_A
 		);
@@ -274,31 +353,30 @@ class HTBD_Translation_Store {
 	private function get_completed_item_count( $item_type, $item_ids, $target_languages, $language_placeholders, $since ) {
 		global $wpdb;
 
+		$item_ids = array_values( array_filter( array_map( 'absint', (array) $item_ids ) ) );
+
 		if ( empty( $item_ids ) ) {
 			return 0;
 		}
 
-		$contexts             = array_map(
-			static function ( $item_id ) use ( $item_type ) {
-				return $item_type . ':' . $item_id;
-			},
-			$item_ids
-		);
-		$context_placeholders = implode( ',', array_fill( 0, count( $contexts ), '%s' ) );
-		$query_args           = array_merge( $target_languages, $contexts );
+		$id_placeholders = implode( ',', array_fill( 0, count( $item_ids ), '%d' ) );
+		$query_args      = array_merge( array( self::table_name(), sanitize_key( $item_type ) ), $target_languages, $item_ids );
+
 		if ( '' !== $since ) {
 			$query_args[] = $since;
 		}
 
 		$since_clause = '' === $since ? '' : ' AND updated_at >= %s';
+
 		return (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- The custom translation table is the plugin's persistent cache.
-			$wpdb->prepare( // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- IN clauses contain only generated %s placeholders; the optional clause is a fixed SQL fragment.
-				"SELECT COUNT(DISTINCT CONCAT(target_language, '|', SUBSTRING_INDEX(field_context, ':', 2)))
+			$wpdb->prepare( // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- IN clauses contain only generated placeholders; the optional clause is a fixed SQL fragment.
+				"SELECT COUNT(DISTINCT CONCAT(target_language, '|', item_id))
 				FROM %i
 				WHERE status IN ('complete', 'manual')
+				AND item_type = %s
 				AND target_language IN ({$language_placeholders})
-				AND SUBSTRING_INDEX(field_context, ':', 2) IN ({$context_placeholders}){$since_clause}",
-				array_merge( array( self::table_name() ), $query_args )
+				AND item_id IN ({$id_placeholders}){$since_clause}",
+				$query_args
 			)
 		);
 	}

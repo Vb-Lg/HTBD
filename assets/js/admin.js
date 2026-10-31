@@ -89,6 +89,28 @@
 		container.replaceChildren(message);
 	}
 
+	var POLL_INTERVAL = 5000;
+	var MAX_POLL_INTERVAL = 60000;
+
+	var pollTimer = null;
+	var pollDelay = POLL_INTERVAL;
+	var pollingFinished = false;
+
+	function schedulePoll(delay) {
+		if (pollingFinished || document.hidden) {
+			return;
+		}
+
+		window.clearTimeout(pollTimer);
+		pollTimer = window.setTimeout(updateProgress, delay);
+	}
+
+	function isFinished(progress) {
+		var failedItems = progress.failed_items || [];
+
+		return progress.percent >= 100 && !failedItems.length;
+	}
+
 	function updateProgress() {
 		var url = htbdAdmin.progressUrl + '?action=htbd_translation_progress&_ajax_nonce=' + encodeURIComponent(htbdAdmin.progressNonce);
 
@@ -103,11 +125,36 @@
 				if (!response.success) {
 					throw new Error('progress_request_failed');
 				}
+
 				renderProgress(response.data);
+				pollDelay = POLL_INTERVAL;
+
+				if (isFinished(response.data)) {
+					pollingFinished = true;
+
+					return;
+				}
+
+				schedulePoll(pollDelay);
 			})
-			.catch(renderProgressError);
+			.catch(function () {
+				renderProgressError();
+				pollDelay = Math.min(pollDelay * 2, MAX_POLL_INTERVAL);
+				schedulePoll(pollDelay);
+			});
 	}
 
+	document.addEventListener('visibilitychange', function () {
+		if (document.hidden) {
+			window.clearTimeout(pollTimer);
+
+			return;
+		}
+
+		if (!pollingFinished) {
+			updateProgress();
+		}
+	});
+
 	updateProgress();
-	window.setInterval(updateProgress, 5000);
 }());

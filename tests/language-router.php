@@ -128,6 +128,15 @@ function htbd_test_request( $uri, $host = 'example.com' ) {
 	$_SERVER['HTTP_HOST']   = $host;
 }
 
+function htbd_test_redirect( $uri, $host = 'example.com', $home = 'https://example.com' ) {
+	$GLOBALS['htbd_test_options']['home'] = $home;
+
+	$router = new HTBD_Language_Router();
+	htbd_test_request( $uri, $host );
+
+	return $router->admin_redirect_url();
+}
+
 function htbd_test_strip( $uri, $home = 'https://example.com' ) {
 	$router = new HTBD_Language_Router();
 	htbd_test_request( $uri );
@@ -199,6 +208,43 @@ htbd_test_assert(
 	'https://example.com/about/' === $router->source_url( 'https://en.example.com/en/about/' ),
 	'source_url() removes both the domain and the path prefix'
 );
+
+// Login and admin requests arriving through a language route.
+htbd_test_configure( array() );
+htbd_test_assert(
+	'https://example.com/wp-login.php' === htbd_test_redirect( '/en/wp-login.php' ),
+	'redirects a prefixed login request to the source site'
+);
+htbd_test_assert(
+	'https://example.com/wp-login.php?action=login' === htbd_test_redirect( '/en/wp-login.php?action=login' ),
+	'keeps the query string when redirecting a login request'
+);
+htbd_test_assert(
+	'https://example.com/wp-admin/edit.php?post_type=post' === htbd_test_redirect( '/en/wp-admin/edit.php?post_type=post' ),
+	'redirects a prefixed admin request to the source site'
+);
+htbd_test_assert(
+	'https://example.com/wp-admin' === htbd_test_redirect( '/en/wp-admin' ),
+	'redirects an admin request without a trailing slash'
+);
+htbd_test_assert( '' === htbd_test_redirect( '/en/about/' ), 'does not redirect front-end content' );
+htbd_test_assert( '' === htbd_test_redirect( '/wp-login.php' ), 'does not redirect a source language login request' );
+htbd_test_assert(
+	'https://example.com/blog/wp-admin/' === htbd_test_redirect( '/blog/en/wp-admin/', 'example.com', 'https://example.com/blog' ),
+	'keeps the subdirectory install path in the redirect target'
+);
+
+htbd_test_configure(
+	array(
+		'routing_mode'    => array( 'domain' ),
+		'domain_bindings' => array( 'en.example.com' => 'en' ),
+	)
+);
+htbd_test_assert(
+	'https://example.com/wp-admin/' === htbd_test_redirect( '/wp-admin/', 'en.example.com' ),
+	'redirects an admin request that arrived on a bound domain'
+);
+htbd_test_assert( '' === htbd_test_redirect( '/wp-admin/', 'example.com' ), 'does not redirect on the source domain' );
 
 // Language resolution from the query variable.
 $GLOBALS['htbd_test_query_var'] = array( 'htbd_language' => 'jp' );

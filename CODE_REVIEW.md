@@ -201,4 +201,4 @@ term 侧同理（`false` vs `true`，参数个数相同但值不同，也是两�
 
 测试覆盖从 2 个文件扩到 6 个：`provider-batching`、`cron-scheduling`、`sitemap-fallback`、`store-context`、`domain-normalize`、`language-router`。路由层通过假 `HTBD_Settings` 与桩函数覆盖了前缀剥离、子目录与域名 URL 生成、反向还原源站地址、以及从 query var 解析当前语言，共 18 项断言。
 
-唯一仍未覆盖的是 `redirect_admin_request_to_source()`：它在命中时会 `wp_redirect()` 并 `exit`，无法在进程内断言，只能靠真实环境验证。
+`redirect_admin_request_to_source()` 原本因为命中即 `wp_redirect()` + `exit` 而无法断言；本次把它拆成纯函数 `admin_redirect_url()` 与真正执行跳转的薄壳，`language-router` 测试从 18 项扩到 27 项，覆盖语言前缀与绑定域名两种来源、查询参数保留、子目录安装路径、以及不应触发跳转的前台请求与源站请求。至此审查清单中的每一项都有自动化覆盖。

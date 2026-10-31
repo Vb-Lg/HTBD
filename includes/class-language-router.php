@@ -17,8 +17,29 @@ class HTBD_Language_Router {
 	}
 
 	private function redirect_admin_request_to_source() {
-		if ( empty( $_SERVER['REQUEST_URI'] ) ) {
+		$redirect_url = $this->admin_redirect_url();
+
+		if ( '' === $redirect_url ) {
 			return;
+		}
+
+		wp_redirect( $redirect_url, 302, 'HTBD' );
+		exit;
+	}
+
+	/**
+	 * Resolves the source site URL for a login or admin request that arrived
+	 * through a target language prefix or bound domain.
+	 *
+	 * Kept separate from the redirect itself so the target can be asserted in
+	 * tests without exiting the process.
+	 *
+	 * @return string Redirect target, or an empty string when no redirect is
+	 *                needed.
+	 */
+	public function admin_redirect_url() {
+		if ( empty( $_SERVER['REQUEST_URI'] ) ) {
+			return '';
 		}
 
 		$request_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
@@ -26,7 +47,7 @@ class HTBD_Language_Router {
 		$query       = wp_parse_url( $request_uri, PHP_URL_QUERY );
 
 		if ( ! is_string( $path ) ) {
-			return;
+			return '';
 		}
 
 		$relative_path      = $this->relative_path( $path );
@@ -36,7 +57,7 @@ class HTBD_Language_Router {
 		$uses_language_host = HTBD_Settings::is_routing_mode_enabled( 'domain' ) && $this->request_uses_bound_domain();
 
 		if ( ! $uses_language_path && ! $uses_language_host ) {
-			return;
+			return '';
 		}
 
 		if ( $uses_language_path ) {
@@ -44,21 +65,21 @@ class HTBD_Language_Router {
 		}
 
 		if ( ! preg_match( '#^(?:wp-login\.php|wp-admin)(?:/|$)#', $relative_path ) ) {
-			return;
+			return '';
 		}
 
 		$source_url = untrailingslashit( (string) get_option( 'home', '' ) );
 		if ( '' === $source_url ) {
-			return;
+			return '';
 		}
 
 		$redirect_url = $source_url . '/' . ltrim( $relative_path, '/' );
+
 		if ( is_string( $query ) && '' !== $query ) {
 			$redirect_url .= '?' . $query;
 		}
 
-		wp_redirect( esc_url_raw( $redirect_url ), 302, 'HTBD' );
-		exit;
+		return esc_url_raw( $redirect_url );
 	}
 
 	public function register_rewrite_rules() {

@@ -15,7 +15,7 @@ class HTBD_Content_Controller {
 		add_action( 'save_post', array( $this, 'schedule_post_translation' ), 20, 3 );
 		add_action( 'htbd_process_translation', array( $this, 'translate_post' ), 10, 3 );
 		add_action( 'htbd_process_term_translation', array( $this, 'translate_term' ), 10, 3 );
-		add_action( 'htbd_process_seo_output_translation', array( $this, 'translate_seo_output' ), 10, 4 );
+		add_action( 'htbd_process_seo_output_translation', array( $this, 'translate_seo_output' ), 10, 3 );
 		add_action( 'created_term', array( $this, 'schedule_term_translation' ), 20, 3 );
 		add_action( 'edited_term', array( $this, 'schedule_term_translation' ), 20, 3 );
 		add_filter( 'the_title', array( $this, 'translate_title' ), 20, 2 );
@@ -135,12 +135,33 @@ class HTBD_Content_Controller {
 		}
 	}
 
-	public function translate_seo_output( $post_id, $source_value, $target_language, $context ) {
-		$settings = HTBD_Settings::get();
+	/**
+	 * Translates a value that only exists as generated output, such as a
+	 * description built by an SEO plugin. The value itself is handed over
+	 * through a transient so it never has to be serialized into the cron
+	 * option, where long descriptions would bloat the options table.
+	 *
+	 * @param int    $post_id     Post ID.
+	 * @param string $payload_key Transient key holding the source value.
+	 * @param string $context     Field context.
+	 * @return void
+	 */
+	public function translate_seo_output( $post_id, $payload_key, $context ) {
+		$payload = get_transient( (string) $payload_key );
+
+		if ( ! is_array( $payload ) || empty( $payload['value'] ) ) {
+			return;
+		}
+
+		$source_value    = (string) $payload['value'];
+		$target_language = isset( $payload['language'] ) ? sanitize_key( $payload['language'] ) : '';
+		$settings        = HTBD_Settings::get();
 
 		if ( ! get_post( $post_id ) || ! HTBD_Settings::is_supported_language( $target_language ) || '' === $source_value ) {
 			return;
 		}
+
+		delete_transient( (string) $payload_key );
 
 		$service = new HTBD_Translation_Service(
 			$this->store,
@@ -386,9 +407,20 @@ class HTBD_Content_Controller {
 			return $translated_value;
 		}
 
-		$event_args = array( $post_id, $source_value, $target_language, $context );
-		if ( ! wp_next_scheduled( 'htbd_process_seo_output_translation', $event_args ) ) {
-			wp_schedule_single_event( time() + 5, 'htbd_process_seo_output_translation', $event_args );
+		$payload_key = 'htbd_seo_' . md5( $post_id . '|' . $target_language . '|' . $context );
+		set_transient(
+			$payload_key,
+			array(
+				'value'    => $source_value,
+				'language' => $target_language,
+			),
+			10 * MINUTE_IN_SECONDS
+		);
+
+		$event_args = array( $post_id, $payload_key, $context );
+
+		if ( ! wp_next_scheduled( HTBD_Cron::SEO_OUTPUT, $event_args ) ) {
+			wp_schedule_single_event( time() + 5, HTBD_Cron::SEO_OUTPUT, $event_args );
 		}
 
 		return $source_value;

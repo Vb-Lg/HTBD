@@ -3,7 +3,7 @@
  * Plugin Name: HTBD - hyx Translator powered by Baidu Translate
  * Plugin URI: https://www.vblg.top/index.php/archives/147
  * Description: Persistent multilingual WordPress translations powered by Baidu Translate.
- * Version: 0.3.1
+ * Version: 0.4.0
  * Requires at least: 6.4
  * Requires PHP: 8.1
  * Author: hanyixuanten
@@ -16,7 +16,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'HTBD_VERSION', '0.3.1' );
+define( 'HTBD_VERSION', '0.4.0' );
 define( 'HTBD_FILE', __FILE__ );
 define( 'HTBD_PATH', plugin_dir_path( __FILE__ ) );
 

@@ -12,7 +12,7 @@ HTBD 是一款 WordPress 多语言翻译插件，通过百度翻译开放平台 
 - GitHub 仓库：[https://github.com/hanyixuanten/HTBD](https://github.com/hanyixuanten/HTBD)
 - WordPress 插件主页：[https://wordpress.org/plugins/hyx-translator-for-baidu-translate/](https://wordpress.org/plugins/hyx-translator-for-baidu-translate/)
 
-> **审核状态：** HTBD 目前尚未通过 WordPress.org 插件目录审核，因此暂时无法直接通过 WordPress 后台插件市场安装。现阶段请从 GitHub 仓库下载并手动安装。
+> **审核状态：** HTBD 已通过 WordPress.org 插件目录审核，并已上架 [wordpress.org/plugins/hyx-translator-for-baidu-translate](https://wordpress.org/plugins/hyx-translator-for-baidu-translate/)。推荐直接在 WordPress 后台的「插件」→「安装插件」中搜索安装。GitHub Releases 仍保留，用于手动安装和历史版本下载。
 
 ## 主要功能
 
@@ -20,9 +20,9 @@ HTBD 是一款 WordPress 多语言翻译插件，通过百度翻译开放平台 
 
 HTBD 使用百度翻译开放平台提供的翻译 API。用户可以在 WordPress 后台配置自己的 App ID 和密钥，由插件完成请求签名、翻译调用及错误处理。
 
-### 文章和页面翻译
+### 文章、页面与分类项翻译
 
-插件支持翻译 WordPress 文章与页面中的主要内容，包括：
+插件支持翻译后台选定的任意公开文章类型与公开分类法中的主要内容，包括：
 
 - 标题
 - 正文
@@ -30,7 +30,7 @@ HTBD 使用百度翻译开放平台提供的翻译 API。用户可以在 WordPre
 - SEO 字段
 - 图片替代文本
 - 标签
-- 分类目录
+- 分类目录与自定义分类法中的分类项
 - 部分界面文本
 
 ### 多语言访问地址
@@ -40,6 +40,16 @@ HTBD 可以为不同语言生成独立的访问地址，支持：
 - 语言子目录，例如 `/en/`、`/jp/`
 - 不同语言绑定不同域名
 - 根据配置生成对应语言的固定链接
+
+### 语言切换器
+
+访客无需手动修改地址即可切换语言：
+
+- `[htbd_language_switcher]` 短代码，支持 `format="list"` 与 `format="inline"`
+- 面向区块主题的 **HTBD language switcher** 区块
+- 面向不支持区块主题的传统小工具
+
+每个链接指向当前页面对应语言的地址，保留查询参数，并用 `aria-current` 标记当前语言。
 
 ### 翻译结果持久化
 
@@ -59,14 +69,18 @@ HTBD 可以为不同语言生成独立的访问地址，支持：
 - `<pre>` 和 `<code>` 元素内的代码内容（不翻译）
 - 受保护的特殊内容
 
+### 批量与限速请求
+
+同一篇文章的多个文本段会尽量合并为一次百度多行请求，而不是每段各发一次。请求之间按配置的间隔限速，避免超出免费版的每秒调用限制；可恢复的服务端错误会自动重试。
+
 ### 多语言 SEO
 
 HTBD 为多语言页面提供必要的 SEO 支持，包括：
 
 - 多语言固定链接
 - Canonical URL
-- `hreflang` 多语言链接
-- 站点地图兼容
+- 单页与本地化站点地图中的 `hreflang` 多语言链接
+- 指向源语言的 `x-default`
 - SEO 字段翻译
 
 ### 失败回退
@@ -75,6 +89,32 @@ HTBD 为多语言页面提供必要的 SEO 支持，包括：
 
 - 如果没有可用译文，则显示网站的源语言内容。
 - 如果存在以前成功保存的译文，则继续使用旧译文。
+
+### 诊断
+
+设置页内置诊断面板，可检查翻译数据表、固定链接结构、语言访问地址路由、计划任务队列，并通过一次短测试请求验证百度凭据。
+
+## WP-CLI
+
+安装 WP-CLI 后，可以脱离后台管理站内译文：
+
+```bash
+# 每次 20 篇，把已发布文章翻译为英文
+wp htbd translate --language=en --limit=20
+
+# 重新翻译单篇文章
+wp htbd translate --post_id=42 --force
+
+# 翻译分类目录与标签
+wp htbd translate-terms --taxonomy=category
+
+# 查看配置、排队任务与已存行数
+wp htbd status
+
+# 在站点之间迁移已存译文
+wp htbd export translations.csv
+wp htbd import translations.csv --dry-run
+```
 
 ## 快速开始
 
@@ -93,9 +133,16 @@ HTBD 为多语言页面提供必要的 SEO 支持，包括：
 
 ### 二、安装插件
 
-由于插件目前尚未通过 WordPress.org 审核，需要从 GitHub 手动安装。
+HTBD 已上架 WordPress.org 插件目录，可通过 WordPress 后台直接安装并由后台统一更新。
 
-#### 方法一：上传 ZIP 压缩包
+#### 方法一：在 WordPress 后台直接安装（推荐）
+
+1. 登录 WordPress 管理后台。
+2. 打开「插件」→「安装插件」。
+3. 搜索 **HTBD** 或 **hyx Translator for Baidu Translate**。
+4. 点击「立即安装」，然后点击「启用」。
+
+#### 方法二：上传 ZIP 压缩包
 
 1. 访问 [HTBD GitHub 仓库](https://github.com/hanyixuanten/HTBD)。
 2. 点击 **Releases**。
@@ -106,7 +153,7 @@ HTBD 为多语言页面提供必要的 SEO 支持，包括：
 7. 选择下载的 ZIP 文件并开始安装。
 8. 安装完成后启用 HTBD。
 
-#### 方法二：上传到服务器
+#### 方法三：上传到服务器
 
 1. 访问 [HTBD GitHub 仓库](https://github.com/hanyixuanten/HTBD)。
 2. 点击 **Releases**。
@@ -124,7 +171,9 @@ HTBD 为多语言页面提供必要的 SEO 支持，包括：
 4. 设置网站的源语言，或勾选“自动识别源语言”以使用百度翻译的 `auto` 源语言模式。
 5. 添加需要启用的目标语言。
 6. 选择语言 URL 模式，例如语言子目录或域名绑定。
-7. 保存设置。
+7. 选择需要翻译的文章类型与分类法。
+8. 如套餐允许每秒多次调用，可调整请求间隔。
+9. 保存设置。
 
 修改语言路由设置后，建议在 WordPress 后台打开“设置” → “固定链接”，确认固定链接配置已经正确生效。
 
@@ -169,6 +218,7 @@ https://example.com/jp/about/
 - 修改原文后，应检查对应语言的译文是否需要更新。
 - 配置域名绑定时，需要同时完成 DNS、HTTPS 证书和服务器域名设置。
 - 修改语言路由后，请检查 Canonical URL、`hreflang` 和站点地图是否正确。
+- 更换主机、固定链接或凭据后，运行一次诊断面板。
 
 ## 系统要求
 

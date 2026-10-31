@@ -1,14 +1,14 @@
 # SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR HTBD contributors
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the hyx-translator-for-baidu-translate package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: hyx-translator-for-baidu-translate 0.3.1\n"
+"Project-Id-Version: hyx-translator-for-baidu-translate 0.4.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-28 14:41+0800\n"
+"POT-Creation-Date: 2026-10-31 03:44+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,247 +16,559 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: includes/class-admin.php:22
+#: hyx-translator-for-baidu-translate.php:59
+msgid "GitHub Repository"
+msgstr ""
+
+#. translators: %s: number of queued translation tasks.
+#: includes/class-admin.php:49
+#, php-format
+msgid "%s translation task has been queued."
+msgid_plural "%s translation tasks have been queued."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-admin.php:59
+msgid "All saved translations have been cleared."
+msgstr ""
+
+#. translators: %s: target language code.
+#: includes/class-admin.php:62
+#, php-format
+msgid "Saved %s translations have been cleared."
+msgstr ""
+
+#: includes/class-admin.php:72
+msgid "Manual translations"
+msgstr ""
+
+#: includes/class-admin.php:80
+msgid "Generate a translation first, then edit it here."
+msgstr ""
+
+#: includes/class-admin.php:83
+msgid ""
+"Changes are saved as manual translations and remain until you explicitly "
+"retranslate this content."
+msgstr ""
+
+#: includes/class-admin.php:121
+msgid "Title"
+msgstr ""
+
+#: includes/class-admin.php:122
+msgid "Excerpt"
+msgstr ""
+
+#: includes/class-admin.php:125
+msgid "Content"
+msgstr ""
+
+#: includes/class-admin.php:162
 msgid "HTBD"
 msgstr ""
 
-#: includes/class-admin.php:48
+#. translators: 1: translated content item count, 2: total content item count.
+#: includes/class-admin.php:189
 #, php-format
 msgid "(%1$s / %2$s content items)"
 msgstr ""
 
-#: includes/class-admin.php:49
+#. translators: 1: latest task status, 2: translated post/page count, 3: total post/page count, 4: translated category/tag count, 5: total category/tag count.
+#: includes/class-admin.php:191
 #, php-format
 msgid ""
 "Latest task: %1$s. Posts and pages: %2$s / %3$s; categories and tags: %4$s / "
 "%5$s. Updates automatically every 5 seconds."
 msgstr ""
 
-#: includes/class-admin.php:50
-msgid "Unable to load translation progress at this time."
-msgstr ""
-
+#: includes/class-admin.php:192
 msgid "Failed translations"
 msgstr ""
 
+#: includes/class-admin.php:193 includes/class-admin.php:530
+msgid "Retranslate"
+msgstr ""
+
+#: includes/class-admin.php:194
+msgid "Unable to load translation progress at this time."
+msgstr ""
+
+#: includes/class-admin.php:210
+msgid "Add at least one target language."
+msgstr ""
+
+#: includes/class-admin.php:215
+msgid "Select at least one URL mode."
+msgstr ""
+
+#: includes/class-admin.php:220
+msgid "Select at least one post type to translate."
+msgstr ""
+
+#: includes/class-admin.php:274
 msgid "Source language detection"
 msgstr ""
 
+#: includes/class-admin.php:274
 msgid "Automatically detect the source language"
 msgstr ""
 
-#: includes/class-admin.php:95
+#: includes/class-admin.php:275
 msgid "Source language"
 msgstr ""
 
-#: includes/class-admin.php:95
+#: includes/class-admin.php:275
 msgid "Use a Baidu Translate language code, for example zh."
 msgstr ""
 
-#: includes/class-admin.php:96
+#: includes/class-admin.php:276
 msgid "Target languages"
 msgstr ""
 
-#: includes/class-admin.php:96
+#: includes/class-admin.php:276
 msgid "Separate multiple language codes with commas, for example en,jp."
 msgstr ""
 
-#: includes/class-admin.php:97
+#: includes/class-admin.php:277
+msgid "Post types"
+msgstr ""
+
+#. translators: %s: comma separated list of available post type names.
+#: includes/class-admin.php:277
+#, php-format
+msgid ""
+"Comma separated post type names, for example post,page. Available post "
+"types: %s."
+msgstr ""
+
+#: includes/class-admin.php:278
+msgid "Taxonomies"
+msgstr ""
+
+#. translators: %s: comma separated list of available taxonomy names.
+#: includes/class-admin.php:278
+#, php-format
+msgid ""
+"Comma separated taxonomy names, for example category,post_tag. Available "
+"taxonomies: %s."
+msgstr ""
+
+#: includes/class-admin.php:279
 msgid "URL mode"
 msgstr ""
 
-#: includes/class-admin.php:97
+#: includes/class-admin.php:279
 msgid "Subdirectory"
 msgstr ""
 
-#: includes/class-admin.php:97
+#: includes/class-admin.php:279
 msgid "Domain"
 msgstr ""
 
-#: includes/class-admin.php:98
+#: includes/class-admin.php:280
 msgid "Domain bindings"
 msgstr ""
 
-#: includes/class-admin.php:98
+#: includes/class-admin.php:280
 msgid ""
 "Enter one domain=language code pair per line, for example en.example.com=en. "
 "Do not include https://, a path, or a port."
 msgstr ""
 
-#: includes/class-admin.php:99
+#: includes/class-admin.php:281
 msgid "Baidu application ID"
 msgstr ""
 
-#: includes/class-admin.php:100
+#: includes/class-admin.php:282
 msgid "Baidu secret key"
 msgstr ""
 
-msgid "After saving settings for the first time, manually run \"Retranslate all content\" below."
+#: includes/class-admin.php:283
+msgid "Request interval"
 msgstr ""
 
-#: includes/class-admin.php:101
+#: includes/class-admin.php:283
+msgid "milliseconds"
+msgstr ""
+
+#: includes/class-admin.php:283
+msgid ""
+"Minimum delay between two Baidu Translate requests. The free plan allows one "
+"request per second, so 1000 is a safe default. Use 0 to disable throttling."
+msgstr ""
+
+#: includes/class-admin.php:284
 msgid "Request logging"
 msgstr ""
 
-#: includes/class-admin.php:101
+#: includes/class-admin.php:284
 msgid "Log each Baidu Translate request"
 msgstr ""
 
-#: includes/class-admin.php:101
+#: includes/class-admin.php:284
 msgid ""
-"When enabled, fires the htbd_translation_request_logged action with "
-"the language, field, text fingerprint, length, and result status. "
-"Credentials, source text, translated text, and full API responses are never "
-"included."
+"When enabled, fires the htbd_translation_request_logged action with the "
+"language, field, text fingerprint, length, and result status. Credentials, "
+"source text, translated text, and full API responses are never included."
 msgstr ""
 
-#: includes/class-admin.php:106
+#: includes/class-admin.php:288
+msgid ""
+"After saving settings for the first time, manually run \"Retranslate all "
+"content\" below."
+msgstr ""
+
+#: includes/class-admin.php:292
 msgid "Retranslate content"
 msgstr ""
 
-#: includes/class-admin.php:107
+#: includes/class-admin.php:293
 msgid ""
 "Queue all published posts, pages, categories, and tags for translation again."
 msgstr ""
 
-#: includes/class-admin.php:108
+#: includes/class-admin.php:294 includes/class-admin.php:316
 msgid "This will retranslate all content and use your API quota. Continue?"
 msgstr ""
 
-#: includes/class-admin.php:111
+#: includes/class-admin.php:297 includes/class-admin.php:320
 msgid "Retranslate all content"
 msgstr ""
 
-#: includes/class-admin.php:113
+#: includes/class-admin.php:299
 msgid "You can also retranslate a single content type."
 msgstr ""
 
-#: includes/class-admin.php:114
+#: includes/class-admin.php:300 includes/class-admin.php:322
 msgid ""
 "This will retranslate all posts and pages and use your API quota. Continue?"
 msgstr ""
 
-#: includes/class-admin.php:118
+#: includes/class-admin.php:304 includes/class-admin.php:327
 msgid "Translate all posts"
 msgstr ""
 
-#: includes/class-admin.php:120
+#: includes/class-admin.php:306 includes/class-admin.php:329
 msgid ""
 "This will retranslate all categories and tags and use your API quota. "
 "Continue?"
 msgstr ""
 
-#: includes/class-admin.php:124
+#: includes/class-admin.php:310 includes/class-admin.php:334
 msgid "Translate all categories and tags"
 msgstr ""
 
-#: includes/class-admin.php:127
+#. translators: %s: target language code.
+#: includes/class-admin.php:336
+#, php-format
+msgid "This will delete all saved %s translations. Continue?"
+msgstr ""
+
+#: includes/class-admin.php:340 includes/class-admin.php:350
+msgid "Clear translation cache"
+msgstr ""
+
+#: includes/class-admin.php:345
 msgid "Translation cache"
 msgstr ""
 
-#: includes/class-admin.php:128
+#: includes/class-admin.php:346
 msgid ""
 "After clearing the cache, the front end temporarily displays source content. "
 "Baidu Translate API calls resume when content is translated again."
 msgstr ""
 
-#: includes/class-admin.php:129
+#: includes/class-admin.php:347
 msgid ""
 "This will delete all saved translations, cancel pending translation tasks, "
 "and reset progress. Continue?"
 msgstr ""
 
-#. translators: %s: target language code.
-#, php-format
-msgid "This will delete all saved %s translations. Continue?"
-msgstr ""
-
-#: includes/class-admin.php:132
-msgid "Clear translation cache"
-msgstr ""
-
-#: includes/class-admin.php:135
+#: includes/class-admin.php:353
 msgid "Translation progress"
 msgstr ""
 
-#: includes/class-admin.php:137
+#: includes/class-admin.php:355
 msgid "Loading translation progress..."
 msgstr ""
 
-#: includes/class-admin.php:145
-#: includes/class-admin.php:211
+#: includes/class-admin.php:370 includes/class-admin.php:443
+#: includes/class-health-check.php:27
 msgid "You do not have permission to perform this action."
 msgstr ""
 
-#: includes/class-admin.php:151
+#: includes/class-admin.php:376
 msgid "Invalid translation scope."
 msgstr ""
 
-#: includes/class-admin.php:218
-msgid "Failed to clear the translation cache."
-msgstr ""
-
-#: includes/class-admin.php:238
-msgid "Settings"
-msgstr ""
-
-#: includes/class-admin.php:281
-msgid "Translation status"
-msgstr ""
-
-#: includes/class-admin.php:296
-msgid "Retranslate"
-msgstr ""
-
-#: includes/class-admin.php:296
-msgid "Translate"
-msgstr ""
-
-#: includes/class-admin.php:311
-msgid "Translated"
-msgstr ""
-
-#: includes/class-admin.php:311
-msgid "Not translated"
-msgstr ""
-
-#: includes/class-admin.php:313
-msgid "Last translated:"
-msgstr ""
-
-#: includes/class-admin.php:325
+#: includes/class-admin.php:382 includes/class-admin.php:448
+#: includes/class-admin.php:559 includes/class-admin.php:577
 msgid "Invalid translation request."
 msgstr ""
 
+#: includes/class-admin.php:455
+msgid "Failed to clear the translation cache."
+msgstr ""
+
+#: includes/class-admin.php:469
+msgid "Settings"
+msgstr ""
+
+#: includes/class-admin.php:515
+msgid "Translation status"
+msgstr ""
+
+#: includes/class-admin.php:530
+msgid "Translate"
+msgstr ""
+
+#: includes/class-admin.php:545
+msgid "Translated"
+msgstr ""
+
+#: includes/class-admin.php:545
+msgid "Not translated"
+msgstr ""
+
+#: includes/class-admin.php:547
+msgid "Last translated:"
+msgstr ""
+
+#. translators: %d: content item ID.
+#: includes/class-admin.php:616
 #, php-format
 msgid "Content #%d"
 msgstr ""
 
-#: includes/class-admin.php:351
+#: includes/class-admin.php:657
 msgid "Full translation"
 msgstr ""
 
-#: includes/class-admin.php:355
+#: includes/class-admin.php:661
 msgid "Single post translation"
 msgstr ""
 
-#: includes/class-admin.php:359
+#: includes/class-admin.php:665
 msgid "Posts and pages translation"
 msgstr ""
 
-#: includes/class-admin.php:363
+#: includes/class-admin.php:669
 msgid "Categories and tags translation"
 msgstr ""
 
-#: includes/class-admin.php:366
+#: includes/class-admin.php:672
 msgid "No translation task"
 msgstr ""
 
-#: includes/class-baidu-provider.php:22
+#: includes/class-baidu-provider.php:98
+msgid "Baidu Translate returned an unexpected number of translated lines."
+msgstr ""
+
+#: includes/class-baidu-provider.php:193
 msgid "Baidu Translate credentials are not configured."
 msgstr ""
 
-#: includes/class-baidu-provider.php:52
+#: includes/class-baidu-provider.php:224
 msgid "Baidu Translate returned an invalid response."
+msgstr ""
+
+#: includes/class-health-check.php:42
+msgid "Diagnostics"
+msgstr ""
+
+#: includes/class-health-check.php:43
+msgid ""
+"Checks the settings that silently break translations: the translation table, "
+"permalinks, URL routing, scheduled tasks, and the Baidu credentials. The "
+"credentials check sends one short test request and uses a small amount of "
+"API quota."
+msgstr ""
+
+#: includes/class-health-check.php:48
+msgid "Check"
+msgstr ""
+
+#: includes/class-health-check.php:49
+msgid "Result"
+msgstr ""
+
+#: includes/class-health-check.php:50
+msgid "Details"
+msgstr ""
+
+#. translators: %s: date and time of the last check.
+#: includes/class-health-check.php:67
+#, php-format
+msgid "Last run: %s."
+msgstr ""
+
+#: includes/class-health-check.php:76
+msgid "Run diagnostics"
+msgstr ""
+
+#: includes/class-health-check.php:102 includes/class-health-check.php:105
+msgid "Baidu credentials"
+msgstr ""
+
+#: includes/class-health-check.php:102
+msgid "The application ID or the secret key is empty."
+msgstr ""
+
+#: includes/class-health-check.php:105
+msgid "An application ID and secret key are configured."
+msgstr ""
+
+#: includes/class-health-check.php:115 includes/class-health-check.php:118
+msgid "Translation table"
+msgstr ""
+
+#. translators: %s: database table name.
+#: includes/class-health-check.php:115
+#, php-format
+msgid "The table %s does not exist. Deactivate and reactivate the plugin."
+msgstr ""
+
+#. translators: %s: database table name.
+#: includes/class-health-check.php:118
+#, php-format
+msgid "The table %s exists."
+msgstr ""
+
+#: includes/class-health-check.php:125 includes/class-health-check.php:128
+msgid "Permalinks"
+msgstr ""
+
+#: includes/class-health-check.php:125
+msgid ""
+"Plain permalinks are enabled, so language prefixes cannot be added to URLs. "
+"Choose a pretty permalink structure under Settings > Permalinks."
+msgstr ""
+
+#: includes/class-health-check.php:128
+msgid "A pretty permalink structure is enabled."
+msgstr ""
+
+#: includes/class-health-check.php:135 includes/class-health-check.php:139
+#: includes/class-health-check.php:154 includes/class-health-check.php:164
+#: includes/class-health-check.php:171
+msgid "URL routing"
+msgstr ""
+
+#: includes/class-health-check.php:135
+msgid "No URL mode is enabled, so translated pages are unreachable."
+msgstr ""
+
+#: includes/class-health-check.php:139
+msgid "No target language is configured."
+msgstr ""
+
+#. translators: 1: URL, 2: error message.
+#: includes/class-health-check.php:156
+#, php-format
+msgid ""
+"Could not reach %1$s from the server: %2$s. This is expected when the site "
+"is password protected or not reachable from itself."
+msgstr ""
+
+#. translators: 1: URL, 2: HTTP status code.
+#: includes/class-health-check.php:166
+#, php-format
+msgid "%1$s returned HTTP %2$d."
+msgstr ""
+
+#. translators: %s: URL.
+#: includes/class-health-check.php:173
+#, php-format
+msgid "%s responded with HTTP 200."
+msgstr ""
+
+#: includes/class-health-check.php:181 includes/class-health-check.php:186
+#: includes/class-health-check.php:198
+msgid "Scheduled tasks"
+msgstr ""
+
+#: includes/class-health-check.php:181
+msgid "No translation job is queued."
+msgstr ""
+
+#. translators: 1: queued task count, 2: next run time.
+#: includes/class-health-check.php:190
+#, php-format
+msgid ""
+"%1$d task(s) are queued and the next one is overdue (%2$s UTC). Check that "
+"WP-Cron is running."
+msgstr ""
+
+#. translators: 1: queued task count, 2: next run time.
+#: includes/class-health-check.php:202
+#, php-format
+msgid "%1$d task(s) are queued. The next one runs at %2$s UTC."
+msgstr ""
+
+#: includes/class-health-check.php:213 includes/class-health-check.php:221
+#: includes/class-health-check.php:228
+msgid "Provider round trip"
+msgstr ""
+
+#: includes/class-health-check.php:213
+msgid "Skipped until credentials and a target language are configured."
+msgstr ""
+
+#. translators: 1: error code, 2: error message.
+#: includes/class-health-check.php:223
+#, php-format
+msgid "Baidu Translate rejected the test request: %1$s (%2$s)."
+msgstr ""
+
+#. translators: 1: source language, 2: target language.
+#: includes/class-health-check.php:230
+#, php-format
+msgid "Baidu Translate answered a test request from %1$s to %2$s."
+msgstr ""
+
+#: includes/class-health-check.php:244
+msgid "Pass"
+msgstr ""
+
+#: includes/class-health-check.php:245
+msgid "Warning"
+msgstr ""
+
+#: includes/class-health-check.php:246
+msgid "Fail"
+msgstr ""
+
+#: includes/class-language-switcher.php:234
+msgid "HTBD language switcher"
+msgstr ""
+
+#: includes/class-language-switcher.php:236
+msgid "Links to this page in every configured language."
+msgstr ""
+
+#: includes/class-language-switcher.php:273
+msgid "Title:"
+msgstr ""
+
+#: includes/class-language-switcher.php:277
+msgid "Format:"
+msgstr ""
+
+#: includes/class-language-switcher.php:279
+msgid "List"
+msgstr ""
+
+#: includes/class-language-switcher.php:280
+msgid "Inline"
+msgstr ""
+
+#: includes/class-language-switcher.php:285
+msgid "Show the current language"
+msgstr ""
+
+#: includes/class-translation-service.php:88
+msgid "The translation provider returned no result for this field."
 msgstr ""

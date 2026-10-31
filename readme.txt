@@ -4,7 +4,7 @@ Homepage: https://www.vblg.top/index.php/archives/147
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.3.1
+Stable tag: 0.4.0
 License: GPL-3.0-only
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -16,9 +16,13 @@ HTBD translates supported WordPress content with the Baidu Translate API and per
 
 The WordPress admin interface follows the current WordPress locale. English is the default. Approved WordPress.org language packs take priority, with the bundled Simplified Chinese translation used as a fallback when WordPress is set to `zh_CN`.
 
-Supported values include published post and page titles, content, excerpts, image alternative text, categories, tags, and selected SEO fields. Automatic translation is only scheduled for posts and pages with the `publish` status. Completed translations are stored in the `{$wpdb->prefix}hyx_bd_translations` custom database table. Existing `{$wpdb->prefix}btranslate_translations` data is migrated when the renamed plugin is activated. Front-end rendering reuses stored values and never calls the translation provider dynamically.
+Supported values include published titles, content, excerpts, image alternative text, term names and descriptions, and selected SEO fields, for any public post type and public taxonomy selected in the settings. Automatic translation is only scheduled for posts and pages with the `publish` status. Completed translations are stored in the `{$wpdb->prefix}hyx_bd_translations` custom database table. Existing `{$wpdb->prefix}btranslate_translations` data is migrated when the renamed plugin is activated. Front-end rendering reuses stored values and never calls the translation provider dynamically.
 
 Subdirectory routing supports paths such as `/en/example-post/`. Domain routing maps configured hostnames to target languages. Requests for `wp-login.php` or `wp-admin` through a target-language route are redirected to the corresponding source-site URL while preserving query parameters. Translation failures are non-fatal and fall back to source-language content.
+
+Singular views print `hreflang` alternate links for every configured language, and localized sitemaps declare the same alternates. A language switcher is available as the `[htbd_language_switcher]` shortcode, the HTBD language switcher block, and a classic widget.
+
+Text segments of the same post are sent to Baidu as one multi line request where possible, requests are spaced by the configured interval, and transient provider errors are retried. `wp htbd translate`, `wp htbd translate-terms`, `wp htbd status`, `wp htbd export`, and `wp htbd import` are available when WP-CLI is installed.
 
 == Installation ==
 
@@ -62,6 +66,20 @@ Failed posts, pages, categories, or tags appear below the progress bar on the Se
 Uninstalling removes plugin settings, scheduled tasks, and the custom translation table, including all persisted translations.
 
 == Changelog ==
+
+= 0.4.0 =
+
+* Add `hreflang` alternate links on singular views and in localized sitemaps, plus a canonical fallback when the theme removed the core link.
+* Add a language switcher block, `[htbd_language_switcher]` shortcode, and widget.
+* Translate any public post type and taxonomy instead of only posts, pages, categories, and tags.
+* Batch text segments into multi line Baidu requests, add a configurable request interval, and retry transient provider errors.
+* Add WP-CLI commands for bulk translation, status, CSV export, and CSV import.
+* Add a diagnostics panel that checks the translation table, permalinks, URL routing, scheduled tasks, and the Baidu credentials.
+* Fix a fatal error on category and tag archives caused by the `single_term_title` callback signature.
+* Fix plain text content never finding its stored translation.
+* Fix duplicate translation jobs caused by scheduling the same post with different argument lists.
+* Report the result of queueing and cache clearing actions in the admin.
+* Cache translation lookups per request and keep the original `created_at` when a translation is refreshed.
 
 = 0.3.1 =
 

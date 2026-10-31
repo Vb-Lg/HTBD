@@ -2,7 +2,7 @@
 # This file is distributed under the same license as the Plugins - HTBD &#8211; hyx Translator powered by Baidu Translate - Stable Readme (latest release) package.
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-08-06 00:00+0000\n"
+"PO-Revision-Date: 2026-10-31 04:00+0000\n"
 "Last-Translator: HTBD contributors\n"
 "Language-Team: Chinese (China)\n"
 "MIME-Version: 1.0\n"
@@ -96,8 +96,8 @@ msgid "Subdirectory routing supports paths such as <code>/en/example-post/</code
 msgstr "子目录路由支持 <code>/en/example-post/</code> 等路径。域名路由可将配置的主机名映射到目标语言。通过目标语言路由请求 <code>wp-login.php</code> 或 <code>wp-admin</code> 时，插件会重定向到源站对应地址并保留查询参数。翻译失败不会中断页面请求，而会回退显示源语言内容。"
 
 #. Found in description paragraph.
-msgid "Supported values include published post and page titles, content, excerpts, image alternative text, categories, tags, and selected SEO fields. Automatic translation is only scheduled for posts and pages with the <code>publish</code> status. Completed translations are stored in the <code>{$wpdb-&gt;prefix}hyx_bd_translations</code> custom database table. Existing <code>{$wpdb-&gt;prefix}btranslate_translations</code> data is migrated when the renamed plugin is activated. Front-end rendering reuses stored values and never calls the translation provider dynamically."
-msgstr "支持的值包括已发布文章和页面的标题、正文、摘要、图片替代文本、分类、标签及部分 SEO 字段。插件只为 <code>publish</code> 状态的文章和页面自动安排翻译。完成的翻译保存在 <code>{$wpdb-&gt;prefix}hyx_bd_translations</code> 自建数据表中；启用改名后的插件时，已有 <code>{$wpdb-&gt;prefix}btranslate_translations</code> 数据会自动迁移。前端渲染只读取已保存的值，不会动态请求翻译服务。"
+msgid "Supported values include published titles, content, excerpts, image alternative text, term names and descriptions, and selected SEO fields, for any public post type and public taxonomy selected in the settings. Automatic translation is only scheduled for posts and pages with the <code>publish</code> status. Completed translations are stored in the <code>{$wpdb-&gt;prefix}hyx_bd_translations</code> custom database table. Existing <code>{$wpdb-&gt;prefix}btranslate_translations</code> data is migrated when the renamed plugin is activated. Front-end rendering reuses stored values and never calls the translation provider dynamically."
+msgstr "支持的值包括已发布内容的标题、正文、摘要、图片替代文本、分类项名称与描述及部分 SEO 字段，适用于后台选定的任意公开文章类型与公开分类法。插件只为 <code>publish</code> 状态的文章和页面自动安排翻译。完成的翻译保存在 <code>{$wpdb-&gt;prefix}hyx_bd_translations</code> 自建数据表中；启用改名后的插件时，已有 <code>{$wpdb-&gt;prefix}btranslate_translations</code> 数据会自动迁移。前端渲染只读取已保存的值，不会动态请求翻译服务。"
 
 #. Found in description paragraph.
 msgid "The WordPress admin interface follows the current WordPress locale. English is the default. Approved WordPress.org language packs take priority, with the bundled Simplified Chinese translation used as a fallback when WordPress is set to <code>zh_CN</code>."
@@ -197,3 +197,66 @@ msgstr "保留 HTML <code>&lt;pre&gt;</code> 和 <code>&lt;code&gt;</code> 元�
 #, gp-priority: low
 msgid "Fix translated titles so singular views use the current post context."
 msgstr "修复翻译标题，使单篇内容视图使用当前文章上下文。"
+
+#. Found in description paragraph.
+msgid "Singular views print <code>hreflang</code> alternate links for every configured language, and localized sitemaps declare the same alternates. A language switcher is available as the <code>[htbd_language_switcher]</code> shortcode, the HTBD language switcher block, and a classic widget."
+msgstr "单页视图会为每种已配置语言输出 <code>hreflang</code> 多语言链接，本地化站点地图也声明相同的备用链接。语言切换器提供 <code>[htbd_language_switcher]</code> 短代码、HTBD 语言切换器区块与传统小工具三种形式。"
+
+#. Found in description paragraph.
+msgid "Text segments of the same post are sent to Baidu as one multi line request where possible, requests are spaced by the configured interval, and transient provider errors are retried. <code>wp htbd translate</code>, <code>wp htbd translate-terms</code>, <code>wp htbd status</code>, <code>wp htbd export</code>, and <code>wp htbd import</code> are available when WP-CLI is installed."
+msgstr "同一篇文章的多个文本段会尽量合并为一次百度多行请求；请求之间按配置的间隔限速，可恢复的服务端错误会自动重试。安装 WP-CLI 后可使用 <code>wp htbd translate</code>、<code>wp htbd translate-terms</code>、<code>wp htbd status</code>、<code>wp htbd export</code> 与 <code>wp htbd import</code>。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Add <code>hreflang</code> alternate links on singular views and in localized sitemaps, plus a canonical fallback when the theme removed the core link."
+msgstr "在单页视图与本地化站点地图中新增 <code>hreflang</code> 多语言链接，并在主题移除核心 canonical 链接时提供回退输出。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Add a language switcher block, <code>[htbd_language_switcher]</code> shortcode, and widget."
+msgstr "新增语言切换器区块、<code>[htbd_language_switcher]</code> 短代码与小工具。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Translate any public post type and taxonomy instead of only posts, pages, categories, and tags."
+msgstr "支持任意公开文章类型与分类法，不再局限于文章、页面、分类目录与标签。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Batch text segments into multi line Baidu requests, add a configurable request interval, and retry transient provider errors."
+msgstr "将文本段合并为多行百度请求，新增可配置的请求间隔，并自动重试可恢复的服务端错误。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Add WP-CLI commands for bulk translation, status, CSV export, and CSV import."
+msgstr "新增 WP-CLI 命令，支持批量翻译、状态查看、CSV 导出与导入。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Add a diagnostics panel that checks the translation table, permalinks, URL routing, scheduled tasks, and the Baidu credentials."
+msgstr "新增诊断面板，用于检查翻译数据表、固定链接、语言路由、计划任务与百度凭据。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Fix a fatal error on category and tag archives caused by the <code>single_term_title</code> callback signature."
+msgstr "修复由 <code>single_term_title</code> 回调签名导致的分类与标签归档页致命错误。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Fix plain text content never finding its stored translation."
+msgstr "修复纯文本正文始终无法命中已保存译文的问题。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Fix duplicate translation jobs caused by scheduling the same post with different argument lists."
+msgstr "修复因同一文章使用不同参数列表排程而导致重复翻译的问题。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Report the result of queueing and cache clearing actions in the admin."
+msgstr "后台执行排队与清空缓存操作后会显示结果提示。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Cache translation lookups per request and keep the original <code>created_at</code> when a translation is refreshed."
+msgstr "译文查询增加请求级缓存，刷新译文时保留原始 <code>created_at</code>。"

@@ -3,10 +3,10 @@
 # This file is distributed under the same license as the hyx-translator-for-baidu-translate package.
 msgid ""
 msgstr ""
-"Project-Id-Version: hyx-translator-for-baidu-translate 0.3.1\n"
+"Project-Id-Version: hyx-translator-for-baidu-translate 0.4.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-28 14:41+0800\n"
-"PO-Revision-Date: 2026-07-28 14:45+0800\n"
+"POT-Creation-Date: 2026-10-31 03:44+0000\n"
+"PO-Revision-Date: 2026-10-31 04:00+0000\n"
 "Last-Translator: HTBD contributors\n"
 "Language-Team: Chinese (Simplified)\n"
 "Language: zh_CN\n"
@@ -15,195 +15,588 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
+#: hyx-translator-for-baidu-translate.php:59
+msgid "GitHub Repository"
+msgstr "GitHub 代码仓库"
+
+#. translators: %s: number of queued translation tasks.
+#: includes/class-admin.php:49
+#, fuzzy, php-format
+msgid "%s translation task has been queued."
+msgid_plural "%s translation tasks have been queued."
+msgstr[0] "暂无翻译任务"
+
+#: includes/class-admin.php:59
+msgid "All saved translations have been cleared."
+msgstr "已清除全部已保存的译文。"
+
+#. translators: %s: target language code.
+#: includes/class-admin.php:62
+#, php-format
+msgid "Saved %s translations have been cleared."
+msgstr "已清除 %s 的已保存译文。"
+
+#: includes/class-admin.php:72
+#, fuzzy
+msgid "Manual translations"
+msgstr "全量翻译"
+
+#: includes/class-admin.php:80
+msgid "Generate a translation first, then edit it here."
+msgstr "请先生成译文，然后在此处修改。"
+
+#: includes/class-admin.php:83
+msgid ""
+"Changes are saved as manual translations and remain until you explicitly "
+"retranslate this content."
+msgstr "修改会保存为人工译文，并在你主动重新翻译该内容前一直保留。"
+
+#: includes/class-admin.php:121
+msgid "Title"
+msgstr "标题"
+
+#: includes/class-admin.php:122
+msgid "Excerpt"
+msgstr "摘要"
+
+#: includes/class-admin.php:125
+#, fuzzy
+msgid "Content"
+msgstr "内容 #%d"
+
+#: includes/class-admin.php:162
 msgid "HTBD"
 msgstr "HTBD"
 
+#. translators: 1: translated content item count, 2: total content item count.
+#: includes/class-admin.php:189
 #, php-format
 msgid "(%1$s / %2$s content items)"
 msgstr "（%1$s / %2$s 个内容项）"
 
+#. translators: 1: latest task status, 2: translated post/page count, 3: total post/page count, 4: translated category/tag count, 5: total category/tag count.
+#: includes/class-admin.php:191
 #, php-format
-msgid "Latest task: %1$s. Posts and pages: %2$s / %3$s; categories and tags: %4$s / %5$s. Updates automatically every 5 seconds."
-msgstr "最近任务：%1$s。文章和页面：%2$s / %3$s；分类和标签：%4$s / %5$s。每 5 秒自动更新。"
+msgid ""
+"Latest task: %1$s. Posts and pages: %2$s / %3$s; categories and tags: %4$s / "
+"%5$s. Updates automatically every 5 seconds."
+msgstr ""
+"最近任务：%1$s。文章和页面：%2$s / %3$s；分类和标签：%4$s / %5$s。每 5 秒自动"
+"更新。"
 
-msgid "Unable to load translation progress at this time."
-msgstr "暂时无法读取翻译进度。"
-
+#: includes/class-admin.php:192
 msgid "Failed translations"
 msgstr "翻译失败的内容"
 
+#: includes/class-admin.php:193 includes/class-admin.php:530
+msgid "Retranslate"
+msgstr "重新翻译"
+
+#: includes/class-admin.php:194
+msgid "Unable to load translation progress at this time."
+msgstr "暂时无法读取翻译进度。"
+
+#: includes/class-admin.php:210
+msgid "Add at least one target language."
+msgstr "请至少添加一种目标语言。"
+
+#: includes/class-admin.php:215
+msgid "Select at least one URL mode."
+msgstr "请至少选择一种 URL 模式。"
+
+#: includes/class-admin.php:220
+msgid "Select at least one post type to translate."
+msgstr "请至少选择一种需要翻译的文章类型。"
+
+#: includes/class-admin.php:274
 msgid "Source language detection"
 msgstr "源语言识别"
 
+#: includes/class-admin.php:274
 msgid "Automatically detect the source language"
 msgstr "自动识别源语言"
 
+#: includes/class-admin.php:275
 msgid "Source language"
 msgstr "源语言"
 
+#: includes/class-admin.php:275
 msgid "Use a Baidu Translate language code, for example zh."
 msgstr "使用百度翻译语言代码，例如 zh。"
 
+#: includes/class-admin.php:276
 msgid "Target languages"
 msgstr "目标语言"
 
+#: includes/class-admin.php:276
 msgid "Separate multiple language codes with commas, for example en,jp."
 msgstr "多个语言代码用英文逗号分隔，例如 en,jp。"
 
+#: includes/class-admin.php:277
+msgid "Post types"
+msgstr "文章类型"
+
+#. translators: %s: comma separated list of available post type names.
+#: includes/class-admin.php:277
+#, php-format
+msgid ""
+"Comma separated post type names, for example post,page. Available post "
+"types: %s."
+msgstr "以逗号分隔的文章类型名称，例如 post,page。可用文章类型：%s。"
+
+#: includes/class-admin.php:278
+msgid "Taxonomies"
+msgstr "分类法"
+
+#. translators: %s: comma separated list of available taxonomy names.
+#: includes/class-admin.php:278
+#, php-format
+msgid ""
+"Comma separated taxonomy names, for example category,post_tag. Available "
+"taxonomies: %s."
+msgstr "以逗号分隔的分类法名称，例如 category,post_tag。可用分类法：%s。"
+
+#: includes/class-admin.php:279
 msgid "URL mode"
 msgstr "网址模式"
 
+#: includes/class-admin.php:279
 msgid "Subdirectory"
 msgstr "子目录"
 
+#: includes/class-admin.php:279
 msgid "Domain"
 msgstr "域名"
 
+#: includes/class-admin.php:280
 msgid "Domain bindings"
 msgstr "域名绑定"
 
-msgid "Enter one domain=language code pair per line, for example en.example.com=en. Do not include https://, a path, or a port."
-msgstr "每行一个域名=语言代码，例如 en.example.com=en。请勿填写 https://、路径或端口。"
+#: includes/class-admin.php:280
+msgid ""
+"Enter one domain=language code pair per line, for example en.example.com=en. "
+"Do not include https://, a path, or a port."
+msgstr ""
+"每行一个域名=语言代码，例如 en.example.com=en。请勿填写 https://、路径或端"
+"口。"
 
+#: includes/class-admin.php:281
 msgid "Baidu application ID"
 msgstr "百度应用 ID"
 
+#: includes/class-admin.php:282
 msgid "Baidu secret key"
 msgstr "百度密钥"
 
-msgid "After saving settings for the first time, manually run \"Retranslate all content\" below."
-msgstr "第一次保存设置后，请手动执行下方的“重新翻译所有内容”。"
+#: includes/class-admin.php:283
+#, fuzzy
+msgid "Request interval"
+msgstr "请求日志"
 
+#: includes/class-admin.php:283
+msgid "milliseconds"
+msgstr "毫秒"
+
+#: includes/class-admin.php:283
+msgid ""
+"Minimum delay between two Baidu Translate requests. The free plan allows one "
+"request per second, so 1000 is a safe default. Use 0 to disable throttling."
+msgstr "两次百度翻译请求之间的最小间隔。免费版限制为每秒 1 次请求，因此 1000 是安全默认值。设为 0 可关闭限速。"
+
+#: includes/class-admin.php:284
 msgid "Request logging"
 msgstr "请求日志"
 
+#: includes/class-admin.php:284
 msgid "Log each Baidu Translate request"
 msgstr "记录每次百度翻译请求"
 
-msgid "When enabled, fires the htbd_translation_request_logged action with the language, field, text fingerprint, length, and result status. Credentials, source text, translated text, and full API responses are never included."
-msgstr "启用后触发 htbd_translation_request_logged 操作，提供语言、字段、文本指纹、长度和结果状态；不会提供密钥、原文、译文或完整 API 响应。"
+#: includes/class-admin.php:284
+msgid ""
+"When enabled, fires the htbd_translation_request_logged action with the "
+"language, field, text fingerprint, length, and result status. Credentials, "
+"source text, translated text, and full API responses are never included."
+msgstr ""
+"启用后触发 htbd_translation_request_logged 操作，提供语言、字段、文本指纹、长"
+"度和结果状态；不会提供密钥、原文、译文或完整 API 响应。"
 
+#: includes/class-admin.php:288
+msgid ""
+"After saving settings for the first time, manually run \"Retranslate all "
+"content\" below."
+msgstr "第一次保存设置后，请手动执行下方的“重新翻译所有内容”。"
+
+#: includes/class-admin.php:292
 msgid "Retranslate content"
 msgstr "重新翻译内容"
 
-msgid "Queue all published posts, pages, categories, and tags for translation again."
+#: includes/class-admin.php:293
+msgid ""
+"Queue all published posts, pages, categories, and tags for translation again."
 msgstr "将所有已发布文章、页面、分类和标签重新加入翻译队列。"
 
+#: includes/class-admin.php:294 includes/class-admin.php:316
 msgid "This will retranslate all content and use your API quota. Continue?"
 msgstr "这将重新翻译所有内容，请注意 API 消耗。确认继续吗？"
 
+#: includes/class-admin.php:297 includes/class-admin.php:320
 msgid "Retranslate all content"
 msgstr "重新翻译所有内容"
 
+#: includes/class-admin.php:299
 msgid "You can also retranslate a single content type."
 msgstr "也可以只重新翻译一种内容类型。"
 
-msgid "This will retranslate all posts and pages and use your API quota. Continue?"
+#: includes/class-admin.php:300 includes/class-admin.php:322
+msgid ""
+"This will retranslate all posts and pages and use your API quota. Continue?"
 msgstr "这将重新翻译所有文章和页面，请注意 API 消耗。确认继续吗？"
 
+#: includes/class-admin.php:304 includes/class-admin.php:327
 msgid "Translate all posts"
 msgstr "翻译所有文章"
 
-msgid "This will retranslate all categories and tags and use your API quota. Continue?"
+#: includes/class-admin.php:306 includes/class-admin.php:329
+msgid ""
+"This will retranslate all categories and tags and use your API quota. "
+"Continue?"
 msgstr "这将重新翻译所有分类和标签，请注意 API 消耗。确认继续吗？"
 
+#: includes/class-admin.php:310 includes/class-admin.php:334
 msgid "Translate all categories and tags"
 msgstr "翻译所有分类和标签"
 
-msgid "Translation cache"
-msgstr "翻译缓存"
-
-msgid "After clearing the cache, the front end temporarily displays source content. Baidu Translate API calls resume when content is translated again."
-msgstr "清除后，前台会暂时显示源文；重新翻译时将再次调用百度翻译 API。"
-
-msgid "This will delete all saved translations, cancel pending translation tasks, and reset progress. Continue?"
-msgstr "这将删除所有已保存的翻译、取消待执行翻译任务并重置进度。确认继续吗？"
-
+#. translators: %s: target language code.
+#: includes/class-admin.php:336
 #, php-format
 msgid "This will delete all saved %s translations. Continue?"
 msgstr "这将删除所有已保存的 %s 翻译。确认继续吗？"
 
+#: includes/class-admin.php:340 includes/class-admin.php:350
 msgid "Clear translation cache"
 msgstr "清除已翻译的缓存"
 
+#: includes/class-admin.php:345
+msgid "Translation cache"
+msgstr "翻译缓存"
+
+#: includes/class-admin.php:346
+msgid ""
+"After clearing the cache, the front end temporarily displays source content. "
+"Baidu Translate API calls resume when content is translated again."
+msgstr "清除后，前台会暂时显示源文；重新翻译时将再次调用百度翻译 API。"
+
+#: includes/class-admin.php:347
+msgid ""
+"This will delete all saved translations, cancel pending translation tasks, "
+"and reset progress. Continue?"
+msgstr "这将删除所有已保存的翻译、取消待执行翻译任务并重置进度。确认继续吗？"
+
+#: includes/class-admin.php:353
 msgid "Translation progress"
 msgstr "翻译进度"
 
+#: includes/class-admin.php:355
 msgid "Loading translation progress..."
 msgstr "正在读取翻译进度..."
 
+#: includes/class-admin.php:370 includes/class-admin.php:443
+#: includes/class-health-check.php:27
 msgid "You do not have permission to perform this action."
 msgstr "您没有执行此操作的权限。"
 
+#: includes/class-admin.php:376
 msgid "Invalid translation scope."
 msgstr "无效的翻译范围。"
 
-msgid "Failed to clear the translation cache."
-msgstr "翻译缓存清除失败。"
-
-msgid "Settings"
-msgstr "设置"
-
-msgid "Translation status"
-msgstr "翻译状态"
-
-msgid "Retranslate"
-msgstr "重新翻译"
-
-msgid "Translate"
-msgstr "翻译"
-
-msgid "Translated"
-msgstr "已翻译"
-
-msgid "Not translated"
-msgstr "未翻译"
-
-msgid "Last translated:"
-msgstr "上次翻译："
-
+#: includes/class-admin.php:382 includes/class-admin.php:448
+#: includes/class-admin.php:559 includes/class-admin.php:577
 msgid "Invalid translation request."
 msgstr "无效的翻译请求。"
 
+#: includes/class-admin.php:455
+msgid "Failed to clear the translation cache."
+msgstr "翻译缓存清除失败。"
+
+#: includes/class-admin.php:469
+msgid "Settings"
+msgstr "设置"
+
+#: includes/class-admin.php:515
+msgid "Translation status"
+msgstr "翻译状态"
+
+#: includes/class-admin.php:530
+msgid "Translate"
+msgstr "翻译"
+
+#: includes/class-admin.php:545
+msgid "Translated"
+msgstr "已翻译"
+
+#: includes/class-admin.php:545
+msgid "Not translated"
+msgstr "未翻译"
+
+#: includes/class-admin.php:547
+msgid "Last translated:"
+msgstr "上次翻译："
+
+#. translators: %d: content item ID.
+#: includes/class-admin.php:616
 #, php-format
 msgid "Content #%d"
 msgstr "内容 #%d"
 
+#: includes/class-admin.php:657
 msgid "Full translation"
 msgstr "全量翻译"
 
+#: includes/class-admin.php:661
 msgid "Single post translation"
 msgstr "单篇文章翻译"
 
+#: includes/class-admin.php:665
 msgid "Posts and pages translation"
 msgstr "文章和页面翻译"
 
+#: includes/class-admin.php:669
 msgid "Categories and tags translation"
 msgstr "分类和标签翻译"
 
+#: includes/class-admin.php:672
 msgid "No translation task"
 msgstr "暂无翻译任务"
 
+#: includes/class-baidu-provider.php:98
+#, fuzzy
+msgid "Baidu Translate returned an unexpected number of translated lines."
+msgstr "百度翻译返回了无效响应。"
+
+#: includes/class-baidu-provider.php:193
 msgid "Baidu Translate credentials are not configured."
 msgstr "尚未配置百度翻译凭据。"
 
+#: includes/class-baidu-provider.php:224
 msgid "Baidu Translate returned an invalid response."
 msgstr "百度翻译返回了无效响应。"
 
-msgid "GitHub Repository"
-msgstr "GitHub 代码仓库"
+#: includes/class-health-check.php:42
+msgid "Diagnostics"
+msgstr "诊断"
 
-msgid "https://www.vblg.top"
-msgstr "https://www.vblg.top"
+#: includes/class-health-check.php:43
+msgid ""
+"Checks the settings that silently break translations: the translation table, "
+"permalinks, URL routing, scheduled tasks, and the Baidu credentials. The "
+"credentials check sends one short test request and uses a small amount of "
+"API quota."
+msgstr "检查那些会静默导致翻译失效的配置：翻译数据表、固定链接、语言路由、计划任务与百度凭据。凭据检查会发送一次短测试请求，消耗少量 API 额度。"
 
-msgid "hanyixuanten"
-msgstr "hanyixuanten"
+#: includes/class-health-check.php:48
+msgid "Check"
+msgstr "检查项"
 
-msgid "Persistent multilingual WordPress translations powered by Baidu Translate."
-msgstr "由百度翻译提供支持，为 WordPress 生成并持久化保存多语言翻译。"
+#: includes/class-health-check.php:49
+msgid "Result"
+msgstr "结果"
 
-msgid "https://www.vblg.top/index.php/archives/147"
-msgstr "https://www.vblg.top/index.php/archives/147"
+#: includes/class-health-check.php:50
+msgid "Details"
+msgstr "详情"
 
-msgid "HTBD - hyx Translator powered by Baidu Translate"
-msgstr "HTBD - hyx 百度翻译多语言插件"
+#. translators: %s: date and time of the last check.
+#: includes/class-health-check.php:67
+#, php-format
+msgid "Last run: %s."
+msgstr "上次运行：%s。"
+
+#: includes/class-health-check.php:76
+msgid "Run diagnostics"
+msgstr "运行诊断"
+
+#: includes/class-health-check.php:102 includes/class-health-check.php:105
+#, fuzzy
+msgid "Baidu credentials"
+msgstr "百度密钥"
+
+#: includes/class-health-check.php:102
+msgid "The application ID or the secret key is empty."
+msgstr "APP ID 或密钥为空。"
+
+#: includes/class-health-check.php:105
+msgid "An application ID and secret key are configured."
+msgstr "已配置 APP ID 与密钥。"
+
+#: includes/class-health-check.php:115 includes/class-health-check.php:118
+#, fuzzy
+msgid "Translation table"
+msgstr "翻译缓存"
+
+#. translators: %s: database table name.
+#: includes/class-health-check.php:115
+#, php-format
+msgid "The table %s does not exist. Deactivate and reactivate the plugin."
+msgstr "数据表 %s 不存在。请停用并重新启用插件。"
+
+#. translators: %s: database table name.
+#: includes/class-health-check.php:118
+#, php-format
+msgid "The table %s exists."
+msgstr "数据表 %s 已存在。"
+
+#: includes/class-health-check.php:125 includes/class-health-check.php:128
+msgid "Permalinks"
+msgstr "固定链接"
+
+#: includes/class-health-check.php:125
+msgid ""
+"Plain permalinks are enabled, so language prefixes cannot be added to URLs. "
+"Choose a pretty permalink structure under Settings > Permalinks."
+msgstr "当前启用了朴素固定链接，无法在地址中加入语言前缀。请在“设置” → “固定链接”中选择一种美观的固定链接结构。"
+
+#: includes/class-health-check.php:128
+msgid "A pretty permalink structure is enabled."
+msgstr "已启用美观的固定链接结构。"
+
+#: includes/class-health-check.php:135 includes/class-health-check.php:139
+#: includes/class-health-check.php:154 includes/class-health-check.php:164
+#: includes/class-health-check.php:171
+msgid "URL routing"
+msgstr "语言路由"
+
+#: includes/class-health-check.php:135
+msgid "No URL mode is enabled, so translated pages are unreachable."
+msgstr "未启用任何 URL 模式，译文的访问地址不可达。"
+
+#: includes/class-health-check.php:139
+#, fuzzy
+msgid "No target language is configured."
+msgstr "目标语言"
+
+#. translators: 1: URL, 2: error message.
+#: includes/class-health-check.php:156
+#, php-format
+msgid ""
+"Could not reach %1$s from the server: %2$s. This is expected when the site "
+"is password protected or not reachable from itself."
+msgstr "服务器无法访问 %1$s：%2$s。站点启用访问密码或无法自访问时属正常现象。"
+
+#. translators: 1: URL, 2: HTTP status code.
+#: includes/class-health-check.php:166
+#, php-format
+msgid "%1$s returned HTTP %2$d."
+msgstr "%1$s 返回 HTTP %2$d。"
+
+#. translators: %s: URL.
+#: includes/class-health-check.php:173
+#, php-format
+msgid "%s responded with HTTP 200."
+msgstr "%s 返回 HTTP 200。"
+
+#: includes/class-health-check.php:181 includes/class-health-check.php:186
+#: includes/class-health-check.php:198
+msgid "Scheduled tasks"
+msgstr "计划任务"
+
+#: includes/class-health-check.php:181
+#, fuzzy
+msgid "No translation job is queued."
+msgstr "暂无翻译任务"
+
+#. translators: 1: queued task count, 2: next run time.
+#: includes/class-health-check.php:190
+#, php-format
+msgid ""
+"%1$d task(s) are queued and the next one is overdue (%2$s UTC). Check that "
+"WP-Cron is running."
+msgstr "队列中有 %1$d 个任务，最近一个已逾期（%2$s UTC）。请检查 WP-Cron 是否正常运行。"
+
+#. translators: 1: queued task count, 2: next run time.
+#: includes/class-health-check.php:202
+#, php-format
+msgid "%1$d task(s) are queued. The next one runs at %2$s UTC."
+msgstr "队列中有 %1$d 个任务，下一个将在 %2$s UTC 运行。"
+
+#: includes/class-health-check.php:213 includes/class-health-check.php:221
+#: includes/class-health-check.php:228
+msgid "Provider round trip"
+msgstr "服务连通性"
+
+#: includes/class-health-check.php:213
+#, fuzzy
+msgid "Skipped until credentials and a target language are configured."
+msgstr "尚未配置百度翻译凭据。"
+
+#. translators: 1: error code, 2: error message.
+#: includes/class-health-check.php:223
+#, php-format
+msgid "Baidu Translate rejected the test request: %1$s (%2$s)."
+msgstr "百度翻译拒绝了测试请求：%1$s（%2$s）。"
+
+#. translators: 1: source language, 2: target language.
+#: includes/class-health-check.php:230
+#, php-format
+msgid "Baidu Translate answered a test request from %1$s to %2$s."
+msgstr "百度翻译成功响应了 %1$s 到 %2$s 的测试请求。"
+
+#: includes/class-health-check.php:244
+msgid "Pass"
+msgstr "通过"
+
+#: includes/class-health-check.php:245
+msgid "Warning"
+msgstr "警告"
+
+#: includes/class-health-check.php:246
+msgid "Fail"
+msgstr "失败"
+
+#: includes/class-language-switcher.php:234
+msgid "HTBD language switcher"
+msgstr "HTBD 语言切换器"
+
+#: includes/class-language-switcher.php:236
+msgid "Links to this page in every configured language."
+msgstr "链接到当前页面的各个已配置语言版本。"
+
+#: includes/class-language-switcher.php:273
+msgid "Title:"
+msgstr "标题："
+
+#: includes/class-language-switcher.php:277
+msgid "Format:"
+msgstr "显示形式："
+
+#: includes/class-language-switcher.php:279
+msgid "List"
+msgstr "列表"
+
+#: includes/class-language-switcher.php:280
+msgid "Inline"
+msgstr "行内"
+
+#: includes/class-language-switcher.php:285
+#, fuzzy
+msgid "Show the current language"
+msgstr "源语言"
+
+#: includes/class-translation-service.php:88
+msgid "The translation provider returned no result for this field."
+msgstr "翻译服务未返回该字段的结果。"
+
+#~ msgid "https://www.vblg.top"
+#~ msgstr "https://www.vblg.top"
+
+#~ msgid "hanyixuanten"
+#~ msgstr "hanyixuanten"
+
+#~ msgid ""
+#~ "Persistent multilingual WordPress translations powered by Baidu Translate."
+#~ msgstr "由百度翻译提供支持，为 WordPress 生成并持久化保存多语言翻译。"
+
+#~ msgid "https://www.vblg.top/index.php/archives/147"
+#~ msgstr "https://www.vblg.top/index.php/archives/147"
+
+#~ msgid "HTBD - hyx Translator powered by Baidu Translate"
+#~ msgstr "HTBD - hyx 百度翻译多语言插件"

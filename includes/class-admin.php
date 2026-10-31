@@ -15,11 +15,21 @@ class HTBD_Admin {
 		add_action( 'add_meta_boxes', array( $this, 'add_translation_meta_box' ) );
 		add_action( 'save_post', array( $this, 'save_translation_meta_box' ), 30, 3 );
 		add_action( 'wp_ajax_htbd_translation_progress', array( $this, 'translation_progress' ) );
-		add_filter( 'manage_post_posts_columns', array( $this, 'add_translation_column' ) );
-		add_filter( 'manage_page_posts_columns', array( $this, 'add_translation_column' ) );
-		add_action( 'manage_post_posts_custom_column', array( $this, 'render_translation_column' ), 10, 2 );
-		add_action( 'manage_page_posts_custom_column', array( $this, 'render_translation_column' ), 10, 2 );
+		add_action( 'init', array( $this, 'register_post_type_hooks' ), 20 );
 		add_filter( 'plugin_action_links_' . plugin_basename( HTBD_FILE ), array( $this, 'add_plugin_settings_link' ) );
+	}
+
+	/**
+	 * Registers the list table column once every plugin has declared its post
+	 * types, so custom post types are visible at this point.
+	 *
+	 * @return void
+	 */
+	public function register_post_type_hooks() {
+		foreach ( HTBD_Settings::post_types() as $post_type ) {
+			add_filter( 'manage_' . $post_type . '_posts_columns', array( $this, 'add_translation_column' ) );
+			add_action( 'manage_' . $post_type . '_posts_custom_column', array( $this, 'render_translation_column' ), 10, 2 );
+		}
 	}
 
 	public function render_admin_notices() {
@@ -58,7 +68,7 @@ class HTBD_Admin {
 	}
 
 	public function add_translation_meta_box() {
-		foreach ( array( 'post', 'page' ) as $post_type ) {
+		foreach ( HTBD_Settings::post_types() as $post_type ) {
 			add_meta_box( 'htbd-translation-editor', __( 'Manual translations', 'hyx-translator-for-baidu-translate' ), array( $this, 'render_translation_meta_box' ), $post_type, 'normal', 'default' );
 		}
 	}
@@ -81,7 +91,7 @@ class HTBD_Admin {
 	}
 
 	public function save_translation_meta_box( $post_id, $post, $update ) {
-		if ( ! $update || wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) || ! in_array( $post->post_type, array( 'post', 'page' ), true ) || ! current_user_can( 'edit_post', $post_id ) || empty( $_POST['htbd_translation_nonce'] ) ) {
+		if ( ! $update || wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) || ! HTBD_Settings::is_translatable_post_type( $post->post_type ) || ! current_user_can( 'edit_post', $post_id ) || empty( $_POST['htbd_translation_nonce'] ) ) {
 			return;
 		}
 		check_admin_referer( 'htbd_save_translation_' . $post_id, 'htbd_translation_nonce' );
@@ -193,6 +203,23 @@ class HTBD_Admin {
 		$auto_detect_source_language = ! empty( $settings['auto_detect_source_language'] );
 		$routing_modes               = HTBD_Settings::routing_modes( $settings['routing_mode'] ?? array() );
 		$target_languages            = array_values( array_filter( array_map( 'sanitize_key', explode( ',', (string) ( $settings['target_languages'] ?? 'en' ) ) ) ) );
+		$post_types                  = $this->sanitize_choices( $settings['post_types'] ?? '', array_keys( HTBD_Settings::available_post_types() ) );
+		$taxonomies                  = $this->sanitize_choices( $settings['taxonomies'] ?? '', array_keys( HTBD_Settings::available_taxonomies() ) );
+
+		if ( empty( $target_languages ) ) {
+			add_settings_error( 'htbd_settings', 'htbd_target_languages', __( 'Add at least one target language.', 'hyx-translator-for-baidu-translate' ) );
+			$target_languages = HTBD_Settings::defaults()['target_languages'];
+		}
+
+		if ( empty( $routing_modes ) ) {
+			add_settings_error( 'htbd_settings', 'htbd_routing_mode', __( 'Select at least one URL mode.', 'hyx-translator-for-baidu-translate' ) );
+			$routing_modes = HTBD_Settings::defaults()['routing_mode'];
+		}
+
+		if ( empty( $post_types ) ) {
+			add_settings_error( 'htbd_settings', 'htbd_post_types', __( 'Select at least one post type to translate.', 'hyx-translator-for-baidu-translate' ) );
+			$post_types = HTBD_Settings::DEFAULT_POST_TYPES;
+		}
 
 		foreach ( preg_split( '/\r\n|\r|\n/', (string) ( $settings['domain_bindings'] ?? '' ) ) as $line ) {
 			$parts = array_map( 'trim', explode( '=', $line, 2 ) );
@@ -210,10 +237,26 @@ class HTBD_Admin {
 			'routing_mode'               => $routing_modes,
 			'domain_bindings'            => $bindings,
 			'fallback_language'          => sanitize_key( $settings['fallback_language'] ?? 'zh' ),
+			'post_types'                 => $post_types,
+			'taxonomies'                 => $taxonomies,
+			'request_interval'           => min( 5000, absint( $settings['request_interval'] ?? 1000 ) ),
 			'baidu_app_id'               => sanitize_text_field( $settings['baidu_app_id'] ?? '' ),
 			'baidu_secret_key'           => sanitize_text_field( $settings['baidu_secret_key'] ?? '' ),
 			'log_requests'               => ! empty( $settings['log_requests'] ),
 		);
+	}
+
+	/**
+	 * Parses a comma separated list and keeps only the allowed values.
+	 *
+	 * @param string   $value     Raw field value.
+	 * @param string[] $available Allowed values.
+	 * @return string[]
+	 */
+	private function sanitize_choices( $value, $available ) {
+		$chosen = array_filter( array_map( 'sanitize_key', explode( ',', (string) $value ) ) );
+
+		return array_values( array_unique( array_intersect( $chosen, $available ) ) );
 	}
 
 	public function render_settings_page() {
@@ -231,6 +274,8 @@ class HTBD_Admin {
 					<tr><th scope="row"><?php esc_html_e( 'Source language detection', 'hyx-translator-for-baidu-translate' ); ?></th><td><label for="htbd-auto-detect-source-language"><input id="htbd-auto-detect-source-language" name="htbd_settings[auto_detect_source_language]" type="checkbox" value="1" <?php checked( $settings['auto_detect_source_language'] ); ?> /> <?php esc_html_e( 'Automatically detect the source language', 'hyx-translator-for-baidu-translate' ); ?></label></td></tr>
 					<tr id="htbd-source-language-row"<?php echo $settings['auto_detect_source_language'] ? ' style="display:none"' : ''; ?>><th scope="row"><label for="htbd-source-language"><?php esc_html_e( 'Source language', 'hyx-translator-for-baidu-translate' ); ?></label></th><td><input id="htbd-source-language" name="htbd_settings[source_language]" type="text" value="<?php echo esc_attr( $settings['source_language'] ); ?>" /><p class="description"><?php esc_html_e( 'Use a Baidu Translate language code, for example zh.', 'hyx-translator-for-baidu-translate' ); ?></p></td></tr>
 					<tr><th scope="row"><label for="htbd-target-languages"><?php esc_html_e( 'Target languages', 'hyx-translator-for-baidu-translate' ); ?></label></th><td><input id="htbd-target-languages" name="htbd_settings[target_languages]" type="text" value="<?php echo esc_attr( implode( ',', $settings['target_languages'] ) ); ?>" class="regular-text" /><p class="description"><?php esc_html_e( 'Separate multiple language codes with commas, for example en,jp.', 'hyx-translator-for-baidu-translate' ); ?></p></td></tr>
+					<tr><th scope="row"><label for="htbd-post-types"><?php esc_html_e( 'Post types', 'hyx-translator-for-baidu-translate' ); ?></label></th><td><input id="htbd-post-types" name="htbd_settings[post_types]" type="text" value="<?php echo esc_attr( implode( ',', HTBD_Settings::post_types() ) ); ?>" class="regular-text" /><p class="description"><?php echo esc_html( sprintf( /* translators: %s: comma separated list of available post type names. */ __( 'Comma separated post type names, for example post,page. Available post types: %s.', 'hyx-translator-for-baidu-translate' ), implode( ', ', array_keys( HTBD_Settings::available_post_types() ) ) ) ); ?></p></td></tr>
+					<tr><th scope="row"><label for="htbd-taxonomies"><?php esc_html_e( 'Taxonomies', 'hyx-translator-for-baidu-translate' ); ?></label></th><td><input id="htbd-taxonomies" name="htbd_settings[taxonomies]" type="text" value="<?php echo esc_attr( implode( ',', HTBD_Settings::taxonomies() ) ); ?>" class="regular-text" /><p class="description"><?php echo esc_html( sprintf( /* translators: %s: comma separated list of available taxonomy names. */ __( 'Comma separated taxonomy names, for example category,post_tag. Available taxonomies: %s.', 'hyx-translator-for-baidu-translate' ), implode( ', ', array_keys( HTBD_Settings::available_taxonomies() ) ) ) ); ?></p></td></tr>
 					<tr><th scope="row"><?php esc_html_e( 'URL mode', 'hyx-translator-for-baidu-translate' ); ?></th><td><fieldset id="htbd-routing-mode"><label><input type="checkbox" name="htbd_settings[routing_mode][]" value="subdirectory" <?php checked( in_array( 'subdirectory', $settings['routing_mode'], true ) ); ?> /> <?php esc_html_e( 'Subdirectory', 'hyx-translator-for-baidu-translate' ); ?></label><br /><label><input type="checkbox" name="htbd_settings[routing_mode][]" value="domain" <?php checked( in_array( 'domain', $settings['routing_mode'], true ) ); ?> /> <?php esc_html_e( 'Domain', 'hyx-translator-for-baidu-translate' ); ?></label></fieldset></td></tr>
 					<tr id="htbd-domain-bindings-row"<?php echo in_array( 'domain', $settings['routing_mode'], true ) ? '' : ' style="display:none"'; ?>><th scope="row"><label for="htbd-domain-bindings"><?php esc_html_e( 'Domain bindings', 'hyx-translator-for-baidu-translate' ); ?></label></th><td><textarea id="htbd-domain-bindings" name="htbd_settings[domain_bindings]" rows="4" class="large-text" placeholder="en.example.com=en"><?php echo esc_textarea( implode( "\n", $bindings ) ); ?></textarea><p class="description"><?php esc_html_e( 'Enter one domain=language code pair per line, for example en.example.com=en. Do not include https://, a path, or a port.', 'hyx-translator-for-baidu-translate' ); ?></p></td></tr>
 					<tr><th scope="row"><label for="htbd-baidu-app-id"><?php esc_html_e( 'Baidu application ID', 'hyx-translator-for-baidu-translate' ); ?></label></th><td><input id="htbd-baidu-app-id" name="htbd_settings[baidu_app_id]" type="text" value="<?php echo esc_attr( $settings['baidu_app_id'] ); ?>" class="regular-text" /></td></tr>
@@ -339,7 +384,7 @@ class HTBD_Admin {
 		if ( 'all' === $scope || 'posts' === $scope ) {
 			$post_ids = get_posts(
 				array(
-					'post_type'      => array( 'post', 'page' ),
+					'post_type'      => HTBD_Settings::post_types(),
 					'post_status'    => 'publish',
 					'posts_per_page' => -1,
 					'fields'         => 'ids',
@@ -351,7 +396,7 @@ class HTBD_Admin {
 		if ( 'all' === $scope || 'terms' === $scope ) {
 			$term_ids = get_terms(
 				array(
-					'taxonomy'   => array( 'category', 'post_tag' ),
+					'taxonomy'   => HTBD_Settings::taxonomies(),
 					'hide_empty' => false,
 					'fields'     => 'ids',
 				)

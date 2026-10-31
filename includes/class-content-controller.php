@@ -43,7 +43,7 @@ class HTBD_Content_Controller {
 	}
 
 	public function schedule_post_translation( $post_id, $post, $update ) {
-		if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) || 'publish' !== $post->post_status || ! in_array( $post->post_type, array( 'post', 'page' ), true ) ) {
+		if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) || 'publish' !== $post->post_status || ! HTBD_Settings::is_translatable_post_type( $post->post_type ) ) {
 			return;
 		}
 
@@ -103,7 +103,7 @@ class HTBD_Content_Controller {
 	}
 
 	public function schedule_term_translation( $term_id, $term_taxonomy_id, $taxonomy ) {
-		if ( ! in_array( $taxonomy, array( 'category', 'post_tag' ), true ) ) {
+		if ( ! HTBD_Settings::is_translatable_taxonomy( $taxonomy ) ) {
 			return;
 		}
 
@@ -118,7 +118,7 @@ class HTBD_Content_Controller {
 		$term     = get_term( $term_id );
 		$settings = HTBD_Settings::get();
 
-		if ( ! $term || is_wp_error( $term ) || ! in_array( $term->taxonomy, array( 'category', 'post_tag' ), true ) || ! HTBD_Settings::is_supported_language( $target_language ) ) {
+		if ( ! $term || is_wp_error( $term ) || ! HTBD_Settings::is_translatable_taxonomy( $term->taxonomy ) || ! HTBD_Settings::is_supported_language( $target_language ) ) {
 			return;
 		}
 
@@ -281,7 +281,7 @@ class HTBD_Content_Controller {
 	}
 
 	public function translate_term_object( $term, $taxonomy, $context = '' ) {
-		if ( ! $term instanceof WP_Term || ! in_array( $term->taxonomy, array( 'category', 'post_tag' ), true ) || ! $this->is_render_context() ) {
+		if ( ! $term instanceof WP_Term || ! HTBD_Settings::is_translatable_taxonomy( $term->taxonomy ) || ! $this->is_render_context() ) {
 			return $term;
 		}
 
@@ -406,7 +406,7 @@ class HTBD_Content_Controller {
 	}
 
 	private function translate_terms( $post_id, $service, $settings, $target_language, $force_refresh ) {
-		$terms = get_the_terms( $post_id, array( 'category', 'post_tag' ) );
+		$terms = get_the_terms( $post_id, HTBD_Settings::taxonomies() );
 
 		if ( ! is_array( $terms ) ) {
 			return;

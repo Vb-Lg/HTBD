@@ -17,6 +17,8 @@ class HTBD_Plugin {
 
 		add_action( 'init', array( $this, 'register' ) );
 		add_action( 'update_option_htbd_settings', array( $this, 'refresh_rewrite_rules' ), 10, 2 );
+		add_action( 'update_option_htbd_settings', array( 'HTBD_Settings', 'reset' ), 5 );
+		add_action( 'add_option_htbd_settings', array( 'HTBD_Settings', 'reset' ), 5 );
 		$this->admin->register();
 	}
 
@@ -35,19 +37,7 @@ class HTBD_Plugin {
 		if ( null !== $legacy_settings && false === get_option( 'htbd_settings', false ) ) {
 			add_option( 'htbd_settings', $legacy_settings, '', false );
 		}
-		add_option(
-			'htbd_settings',
-			array(
-				'auto_detect_source_language' => false,
-				'source_language'            => 'zh',
-				'target_languages'           => array( 'en' ),
-				'routing_mode'               => array( 'subdirectory' ),
-				'domain_bindings'            => array(),
-				'fallback_language'          => 'zh',
-			),
-			'',
-			false
-		);
+		add_option( 'htbd_settings', HTBD_Settings::defaults(), '', false );
 		$router = new HTBD_Language_Router();
 		$router->register_rewrite_rules();
 		flush_rewrite_rules();

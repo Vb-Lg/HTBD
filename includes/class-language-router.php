@@ -164,6 +164,62 @@ class HTBD_Language_Router {
 		return $scheme . $host . $port . $path . $query . $fragment;
 	}
 
+	/**
+	 * Returns the URL of a page in its source language form, even when the
+	 * given URL already points at a target language.
+	 *
+	 * @param string $url URL in any configured language.
+	 * @return string
+	 */
+	public function source_url( $url ) {
+		$parts = wp_parse_url( $url );
+
+		if ( ! is_array( $parts ) || empty( $parts['host'] ) ) {
+			return $url;
+		}
+
+		$parts    = $this->source_origin_parts( $parts );
+		$scheme   = isset( $parts['scheme'] ) ? $parts['scheme'] . '://' : '//';
+		$port     = isset( $parts['port'] ) ? ':' . $parts['port'] : '';
+		$path     = $this->source_path( isset( $parts['path'] ) ? $parts['path'] : '/' );
+		$query    = isset( $parts['query'] ) ? '?' . $parts['query'] : '';
+		$fragment = isset( $parts['fragment'] ) ? '#' . $parts['fragment'] : '';
+
+		return $scheme . $parts['host'] . $port . $path . $query . $fragment;
+	}
+
+	/**
+	 * Converts a URL into the URL of a specific language, including the
+	 * source language and languages that are only reachable through a bound
+	 * domain.
+	 *
+	 * @param string $url      URL in any configured language.
+	 * @param string $language Target language code.
+	 * @return string
+	 */
+	public function url_for_language( $url, $language ) {
+		$settings = HTBD_Settings::get();
+		$language = sanitize_key( $language );
+
+		if ( '' === $language || 'auto' === $language || ! HTBD_Settings::is_supported_language( $language ) ) {
+			return $url;
+		}
+
+		if ( $language === $settings['source_language'] ) {
+			return $this->source_url( $url );
+		}
+
+		if ( HTBD_Settings::is_routing_mode_enabled( 'domain' ) ) {
+			$domain = array_search( $language, (array) $settings['domain_bindings'], true );
+
+			if ( false !== $domain ) {
+				return $this->localized_domain_url( $url, $language );
+			}
+		}
+
+		return $this->localized_url( $url, $language );
+	}
+
 	public function localize_home_url( $url, $path, $scheme, $blog_id ) {
 		return $this->localized_url( $url );
 	}
@@ -280,8 +336,8 @@ class HTBD_Language_Router {
 	}
 
 	private function source_origin_parts( $parts ) {
-		$host     = isset( $_SERVER['HTTP_HOST'] ) ? HTBD_Settings::normalize_domain( sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) ) : '';
 		$bindings = (array) HTBD_Settings::get()['domain_bindings'];
+		$host     = isset( $parts['host'] ) ? HTBD_Settings::normalize_domain( $parts['host'] ) : '';
 
 		if ( '' === $host || ! isset( $bindings[ $host ] ) ) {
 			return $parts;

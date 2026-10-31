@@ -31,6 +31,7 @@ require_once HTBD_PATH . 'includes/class-content-translator.php';
 require_once HTBD_PATH . 'includes/class-settings.php';
 require_once HTBD_PATH . 'includes/class-language-router.php';
 require_once HTBD_PATH . 'includes/class-sitemap-controller.php';
+require_once HTBD_PATH . 'includes/class-seo-head.php';
 require_once HTBD_PATH . 'includes/class-content-controller.php';
 require_once HTBD_PATH . 'includes/class-admin.php';
 require_once HTBD_PATH . 'includes/class-plugin.php';

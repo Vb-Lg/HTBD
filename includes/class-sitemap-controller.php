@@ -3,6 +3,11 @@
 defined( 'ABSPATH' ) || exit;
 
 class HTBD_Sitemap_Controller {
+	const CACHE_TTL   = 15 * MINUTE_IN_SECONDS;
+	const FAILURE_TTL = 5 * MINUTE_IN_SECONDS;
+	const SITEMAP_NS  = 'http://www.sitemaps.org/schemas/sitemap/0.9';
+	const XHTML_NS    = 'http://www.w3.org/1999/xhtml';
+
 	private $router;
 	private $target_language = '';
 
@@ -12,6 +17,7 @@ class HTBD_Sitemap_Controller {
 
 	public function register() {
 		add_filter( 'do_parse_request', array( $this, 'intercept_request' ), 0, 3 );
+		add_action( HTBD_Cron::SITEMAP_REFRESH, array( $this, 'refresh_source_sitemap' ) );
 	}
 
 	public function intercept_request( $do_parse_request, $wp, $extra_query_vars ) {
@@ -36,6 +42,10 @@ class HTBD_Sitemap_Controller {
 
 		$source_xml = $this->source_sitemap_xml( $source_url );
 		if ( '' === $source_xml ) {
+			// No cached copy yet: answer with a minimal but valid sitemap now and
+			// let a scheduled request fill the cache. Requesting the source site
+			// from inside this request would deadlock single worker setups.
+			$this->serve_fallback_sitemap();
 			return;
 		}
 
@@ -52,11 +62,28 @@ class HTBD_Sitemap_Controller {
 	}
 
 	private function source_sitemap_xml( $source_url ) {
-		$cache_key = 'htbd_sitemap_' . md5( $source_url );
-		$cached    = get_transient( $cache_key );
+		$cached = get_transient( $this->cache_key( $source_url ) );
 
 		if ( is_string( $cached ) && '' !== $cached ) {
 			return $cached;
+		}
+
+		$this->schedule_refresh( $source_url );
+
+		return '';
+	}
+
+	/**
+	 * Fetches the source sitemap in a scheduled request and caches it.
+	 *
+	 * @param string $source_url Source sitemap URL.
+	 * @return void
+	 */
+	public function refresh_source_sitemap( $source_url ) {
+		$source_url = esc_url_raw( (string) $source_url );
+
+		if ( '' === $source_url || $source_url !== $this->source_sitemap_url() ) {
+			return;
 		}
 
 		$response = wp_safe_remote_get(
@@ -64,7 +91,7 @@ class HTBD_Sitemap_Controller {
 			array(
 				'timeout'             => 10,
 				'redirection'         => 0,
-				'limit_response_size' => 5 * MB_IN_BYTES,
+				'limit_response_size' => 2 * MB_IN_BYTES,
 				'headers'             => array(
 					'Accept' => 'application/xml, text/xml;q=0.9',
 				),
@@ -72,15 +99,107 @@ class HTBD_Sitemap_Controller {
 		);
 
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
-			return '';
+			set_transient( $this->failure_key( $source_url ), 1, self::FAILURE_TTL );
+
+			return;
 		}
 
 		$source_xml = wp_remote_retrieve_body( $response );
+
 		if ( '' !== $source_xml ) {
-			set_transient( $cache_key, $source_xml, 5 * MINUTE_IN_SECONDS );
+			set_transient( $this->cache_key( $source_url ), $source_xml, self::CACHE_TTL );
+			delete_transient( $this->failure_key( $source_url ) );
+		}
+	}
+
+	private function schedule_refresh( $source_url ) {
+		if ( get_transient( $this->failure_key( $source_url ) ) ) {
+			return;
 		}
 
-		return $source_xml;
+		$args = array( $source_url );
+
+		if ( false === wp_next_scheduled( HTBD_Cron::SITEMAP_REFRESH, $args ) ) {
+			wp_schedule_single_event( time() + 5, HTBD_Cron::SITEMAP_REFRESH, $args );
+		}
+	}
+
+	/**
+	 * Answers with a minimal sitemap that lists the home page of every
+	 * language, so a first visit is never a 404 and never blocks on a request
+	 * to the site itself.
+	 *
+	 * @return void
+	 */
+	private function serve_fallback_sitemap() {
+		$xml = $this->fallback_sitemap_xml();
+
+		if ( '' === $xml ) {
+			return;
+		}
+
+		status_header( 200 );
+		header( 'Content-Type: application/xml; charset=UTF-8' );
+		header( 'X-Robots-Tag: noindex, follow', true );
+		header( 'Retry-After: 30', true );
+		echo $xml; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Serialized XML from DOMDocument.
+		exit;
+	}
+
+	/**
+	 * @return string Minimal sitemap XML, or an empty string when there is
+	 *                nothing to list.
+	 */
+	private function fallback_sitemap_xml() {
+		$home  = home_url( '/' );
+		$urls  = array();
+
+		foreach ( HTBD_Settings::languages() as $language ) {
+			$url = $this->router->url_for_language( $home, $language );
+
+			if ( is_string( $url ) && '' !== $url ) {
+				$urls[ $language ] = $url;
+			}
+		}
+
+		if ( empty( $urls ) ) {
+			return '';
+		}
+
+		$document = new DOMDocument( '1.0', 'UTF-8' );
+		$document->formatOutput = true;
+		$urlset   = $document->createElementNS( self::SITEMAP_NS, 'urlset' );
+		$urlset->setAttributeNS( 'http://www.w3.org/2000/xmlns/', 'xmlns:xhtml', self::XHTML_NS );
+		$document->appendChild( $urlset );
+
+		foreach ( $urls as $url ) {
+			$url_node = $document->createElementNS( self::SITEMAP_NS, 'url' );
+			$loc      = $document->createElementNS( self::SITEMAP_NS, 'loc' );
+			$loc->appendChild( $document->createTextNode( $url ) );
+			$url_node->appendChild( $loc );
+
+			foreach ( $urls as $language => $alternate ) {
+				$link = $document->createElementNS( self::XHTML_NS, 'xhtml:link' );
+				$link->setAttribute( 'rel', 'alternate' );
+				$link->setAttribute( 'hreflang', HTBD_Settings::hreflang_code( $language ) );
+				$link->setAttribute( 'href', $alternate );
+				$url_node->appendChild( $link );
+			}
+
+			$urlset->appendChild( $url_node );
+		}
+
+		$xml = $document->saveXML();
+
+		return false === $xml ? '' : $xml;
+	}
+
+	private function cache_key( $source_url ) {
+		return 'htbd_sitemap_' . md5( $source_url );
+	}
+
+	private function failure_key( $source_url ) {
+		return 'htbd_sitemap_failed_' . md5( $source_url );
 	}
 
 	private function request_path() {

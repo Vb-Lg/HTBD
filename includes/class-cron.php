@@ -14,6 +14,7 @@ class HTBD_Cron {
 	const POST_TRANSLATION = 'htbd_process_translation';
 	const TERM_TRANSLATION = 'htbd_process_term_translation';
 	const SEO_OUTPUT       = 'htbd_process_seo_output_translation';
+	const SITEMAP_REFRESH  = 'htbd_refresh_source_sitemap';
 
 	/**
 	 * Hooks registered by the plugin, including the legacy names that earlier
@@ -26,6 +27,7 @@ class HTBD_Cron {
 			self::POST_TRANSLATION,
 			self::TERM_TRANSLATION,
 			self::SEO_OUTPUT,
+			self::SITEMAP_REFRESH,
 			'btranslate_process_translation',
 			'btranslate_process_term_translation',
 			'btranslate_process_seo_output_translation',

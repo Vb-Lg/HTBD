@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: GitHub Release tag to deploy (for example, v0.3.1)
+        description: GitHub Release tag to deploy (for example, v1.0.0)
         required: true
         type: string
 

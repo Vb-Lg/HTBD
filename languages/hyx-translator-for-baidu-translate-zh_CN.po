@@ -3,10 +3,10 @@
 # This file is distributed under the same license as the hyx-translator-for-baidu-translate package.
 msgid ""
 msgstr ""
-"Project-Id-Version: hyx-translator-for-baidu-translate 0.4.0\n"
+"Project-Id-Version: hyx-translator-for-baidu-translate 1.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-31 03:52+0000\n"
-"PO-Revision-Date: 2026-10-31 04:30+0000\n"
+"POT-Creation-Date: 2026-10-31 04:20+0000\n"
+"PO-Revision-Date: 2026-10-31 04:20+0000\n"
 "Last-Translator: HTBD contributors\n"
 "Language-Team: Chinese (Simplified)\n"
 "Language: zh_CN\n"

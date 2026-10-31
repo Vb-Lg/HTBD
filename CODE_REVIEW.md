@@ -181,7 +181,7 @@ term 侧同理（`false` vs `true`，参数个数相同但值不同，也是两�
 2. 安装章节新增「方法一：后台直接安装（推荐）」，原 ZIP 上传 / 服务器上传顺延为方法二 / 方法三；
 3. 未改动 `readme.txt`（其中本就没有审核状态描述），因此 `languages/wp-plugins-…-readme-zh-cn.po` 无需同步；若后续改动 `readme.txt` 正文，必须同步该 PO。
 
-## 七、实施状态（0.4.0）
+## 七、实施状态（1.0.0）
 
 已修复：P0-1（`single_term_title` 参数）、P0-2（hreflang / canonical 补齐）、P1-1（纯文本 key 不一致）、P1-2（cron 参数统一）、P1-3（后台操作提示）、P1-4（批量 + 限速 + 重试）、P1-5（`get_term` 语境限制），以及 P2 中的 `find_valid()` 缓存、`REPLACE` 覆盖 `created_at`、`sanitize_key` 破坏 context、空配置静默失效、`auto` 参与语言校验。
 

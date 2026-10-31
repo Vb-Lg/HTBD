@@ -4,7 +4,7 @@ Homepage: https://www.vblg.top/index.php/archives/147
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.4.0
+Stable tag: 1.0.0
 License: GPL-3.0-only
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -67,7 +67,7 @@ Uninstalling removes plugin settings, scheduled tasks, and the custom translatio
 
 == Changelog ==
 
-= 0.4.0 =
+= 1.0.0 =
 
 * Add `hreflang` alternate links on singular views and in localized sitemaps, plus a canonical fallback when the theme removed the core link.
 * Add a language switcher block, `[htbd_language_switcher]` shortcode, and widget.

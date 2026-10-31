@@ -354,6 +354,13 @@ class HTBD_Admin {
 			<div id="htbd-translation-progress" aria-live="polite">
 				<p><?php esc_html_e( 'Loading translation progress...', 'hyx-translator-for-baidu-translate' ); ?></p>
 			</div>
+			<?php
+			/**
+			 * Fires at the end of the HTBD settings screen so additional
+			 * sections can be appended without editing this template.
+			 */
+			do_action( 'htbd_settings_page_sections' );
+			?>
 		</div>
 		<?php
 	}

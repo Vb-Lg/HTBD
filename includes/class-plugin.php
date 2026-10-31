@@ -7,6 +7,7 @@ class HTBD_Plugin {
 	private $router;
 	private $sitemap_controller;
 	private $seo_head;
+	private $language_switcher;
 	private $content_controller;
 	private $admin;
 
@@ -14,6 +15,7 @@ class HTBD_Plugin {
 		$this->router             = new HTBD_Language_Router();
 		$this->sitemap_controller = new HTBD_Sitemap_Controller( $this->router );
 		$this->seo_head           = new HTBD_SEO_Head( $this->router );
+		$this->language_switcher  = new HTBD_Language_Switcher( $this->router );
 		$this->content_controller = new HTBD_Content_Controller( new HTBD_Translation_Store(), $this->router );
 		$this->admin              = new HTBD_Admin();
 
@@ -54,6 +56,7 @@ class HTBD_Plugin {
 		$this->router->register();
 		$this->sitemap_controller->register();
 		$this->seo_head->register();
+		$this->language_switcher->register();
 		$this->content_controller->register();
 
 		if ( get_option( 'htbd_flush_rewrite_rules', false ) ) {

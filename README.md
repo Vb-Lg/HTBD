@@ -227,6 +227,21 @@ The plugin prioritizes saved translations. It calls the translation API again on
 - A server environment that can connect to the Baidu Translate API
 - A valid Baidu Translate Open Platform APP ID and secret key
 
+## Development
+
+```bash
+# Lint every PHP file
+find . -path './.git' -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l
+
+# Run the standalone checks: no WordPress, network access, or credentials needed
+for test in tests/*.php; do php "$test" || exit 1; done
+
+# Build the installable ZIP, verified against the header and readme stable tag
+./build.sh build
+```
+
+The checks in `tests/` stub the WordPress functions they call, so they run on any machine with PHP. They cover translation batching, cron argument normalization, sitemap fallback markup, URL rewriting, domain normalization, and translation context parsing.
+
 ## Feedback and Contributions
 
 To report a problem or suggest a feature, visit the GitHub repository:

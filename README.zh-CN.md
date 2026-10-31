@@ -227,6 +227,21 @@ https://example.com/jp/about/
 - 可正常访问百度翻译 API 的服务器网络环境
 - 有效的百度翻译开放平台 APP ID 和密钥
 
+## 开发
+
+```bash
+# 检查全部 PHP 语法
+find . -path './.git' -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l
+
+# 运行独立检查：不需要 WordPress、网络或 API 凭据
+for test in tests/*.php; do php "$test" || exit 1; done
+
+# 构建安装包，并校验插件头与 readme 的版本号是否一致
+./build.sh build
+```
+
+`tests/` 下的检查通过桩函数替换 WordPress 调用，因此在任何装有 PHP 的机器上都能运行，覆盖批量翻译、计划任务参数、站点地图回退、URL 改写、域名归一化与翻译上下文解析。
+
 ## 问题反馈与贡献
 
 如果在使用过程中遇到问题，或者希望提交功能建议，可以前往 GitHub 仓库反馈：

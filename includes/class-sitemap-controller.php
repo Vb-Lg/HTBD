@@ -158,13 +158,101 @@ class HTBD_Sitemap_Controller {
 			return '';
 		}
 
+		$entries = $this->collect_url_entries( $xpath );
+
 		foreach ( $nodes as $node ) {
 			$node->nodeValue = $this->rewrite_source_urls( $node->nodeValue, $source_url );
 		}
 
+		$this->add_url_alternates( $document, $entries );
+
 		$result = $document->saveXML();
 
 		return false === $result ? '' : $result;
+	}
+
+	/**
+	 * Collects the original source URL of every sitemap entry before the URLs
+	 * are rewritten for the requested language.
+	 *
+	 * @param DOMXPath $xpath Loaded sitemap document.
+	 * @return array<int, array{loc: DOMElement, source: string}>
+	 */
+	private function collect_url_entries( $xpath ) {
+		$entries = array();
+		$nodes   = $xpath->query( '//*[local-name()="url"]/*[local-name()="loc"]' );
+
+		if ( false === $nodes ) {
+			return $entries;
+		}
+
+		foreach ( $nodes as $node ) {
+			$source = trim( (string) $node->textContent );
+
+			if ( '' !== $source ) {
+				$entries[] = array(
+					'loc'    => $node,
+					'source' => $source,
+				);
+			}
+		}
+
+		return $entries;
+	}
+
+	/**
+	 * Adds xhtml:link alternates to every URL entry of a urlset document.
+	 *
+	 * @param DOMDocument $document Loaded sitemap document.
+	 * @param array<int, array{loc: DOMElement, source: string}> $entries Collected entries.
+	 * @return void
+	 */
+	private function add_url_alternates( $document, $entries ) {
+		if ( empty( $entries ) || ! $document->documentElement instanceof DOMElement || 'urlset' !== $document->documentElement->localName ) {
+			return;
+		}
+
+		$languages = HTBD_Settings::languages();
+
+		if ( count( $languages ) < 2 ) {
+			return;
+		}
+
+		$namespace = 'http://www.w3.org/1999/xhtml';
+
+		$document->documentElement->setAttributeNS( 'http://www.w3.org/2000/xmlns/', 'xmlns:xhtml', $namespace );
+
+		foreach ( $entries as $entry ) {
+			$url_node = $entry['loc']->parentNode;
+
+			if ( ! $url_node instanceof DOMElement ) {
+				continue;
+			}
+
+			foreach ( array_reverse( iterator_to_array( $url_node->childNodes, false ) ) as $child ) {
+				if ( $child instanceof DOMElement && 'link' === $child->localName && $child->namespaceURI === $namespace ) {
+					$url_node->removeChild( $child );
+				}
+			}
+
+			$cursor = $entry['loc'];
+
+			foreach ( $languages as $language ) {
+				$href = $this->router->url_for_language( $entry['source'], $language );
+
+				if ( ! is_string( $href ) || '' === $href ) {
+					continue;
+				}
+
+				$link = $document->createElementNS( $namespace, 'xhtml:link' );
+				$link->setAttribute( 'rel', 'alternate' );
+				$link->setAttribute( 'hreflang', HTBD_Settings::hreflang_code( $language ) );
+				$link->setAttribute( 'href', $href );
+
+				$url_node->insertBefore( $link, $cursor->nextSibling );
+				$cursor = $link;
+			}
+		}
 	}
 
 	private function rewrite_source_urls( $value, $source_url ) {

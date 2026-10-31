@@ -203,6 +203,12 @@ class HTBD_Admin {
 		$auto_detect_source_language = ! empty( $settings['auto_detect_source_language'] );
 		$routing_modes               = HTBD_Settings::routing_modes( $settings['routing_mode'] ?? array() );
 		$target_languages            = array_values( array_filter( array_map( 'sanitize_key', explode( ',', (string) ( $settings['target_languages'] ?? 'en' ) ) ) ) );
+		$stored_settings             = (array) get_option( 'htbd_settings', array() );
+		$submitted_secret_key        = sanitize_text_field( $settings['baidu_secret_key'] ?? '' );
+		$clear_secret_key            = ! empty( $settings['clear_baidu_secret_key'] );
+		$secret_key                  = $clear_secret_key
+			? ''
+			: ( '' !== $submitted_secret_key ? $submitted_secret_key : (string) ( $stored_settings['baidu_secret_key'] ?? '' ) );
 		$post_types                  = $this->sanitize_choices( $settings['post_types'] ?? '', array_keys( HTBD_Settings::available_post_types() ) );
 		$taxonomies                  = $this->sanitize_choices( $settings['taxonomies'] ?? '', array_keys( HTBD_Settings::available_taxonomies() ) );
 
@@ -241,7 +247,7 @@ class HTBD_Admin {
 			'taxonomies'                 => $taxonomies,
 			'request_interval'           => min( 5000, absint( $settings['request_interval'] ?? 1000 ) ),
 			'baidu_app_id'               => sanitize_text_field( $settings['baidu_app_id'] ?? '' ),
-			'baidu_secret_key'           => sanitize_text_field( $settings['baidu_secret_key'] ?? '' ),
+			'baidu_secret_key'           => $secret_key,
 			'log_requests'               => ! empty( $settings['log_requests'] ),
 		);
 	}
@@ -260,8 +266,9 @@ class HTBD_Admin {
 	}
 
 	public function render_settings_page() {
-		$settings = HTBD_Settings::get();
-		$bindings = array();
+		$settings       = HTBD_Settings::get();
+		$has_secret_key = '' !== (string) $settings['baidu_secret_key'];
+		$bindings       = array();
 		foreach ( (array) $settings['domain_bindings'] as $domain => $language ) {
 			$bindings[] = $domain . '=' . $language;
 		}
@@ -279,7 +286,7 @@ class HTBD_Admin {
 					<tr><th scope="row"><?php esc_html_e( 'URL mode', 'hyx-translator-for-baidu-translate' ); ?></th><td><fieldset id="htbd-routing-mode"><label><input type="checkbox" name="htbd_settings[routing_mode][]" value="subdirectory" <?php checked( in_array( 'subdirectory', $settings['routing_mode'], true ) ); ?> /> <?php esc_html_e( 'Subdirectory', 'hyx-translator-for-baidu-translate' ); ?></label><br /><label><input type="checkbox" name="htbd_settings[routing_mode][]" value="domain" <?php checked( in_array( 'domain', $settings['routing_mode'], true ) ); ?> /> <?php esc_html_e( 'Domain', 'hyx-translator-for-baidu-translate' ); ?></label></fieldset></td></tr>
 					<tr id="htbd-domain-bindings-row"<?php echo in_array( 'domain', $settings['routing_mode'], true ) ? '' : ' style="display:none"'; ?>><th scope="row"><label for="htbd-domain-bindings"><?php esc_html_e( 'Domain bindings', 'hyx-translator-for-baidu-translate' ); ?></label></th><td><textarea id="htbd-domain-bindings" name="htbd_settings[domain_bindings]" rows="4" class="large-text" placeholder="en.example.com=en"><?php echo esc_textarea( implode( "\n", $bindings ) ); ?></textarea><p class="description"><?php esc_html_e( 'Enter one domain=language code pair per line, for example en.example.com=en. Do not include https://, a path, or a port.', 'hyx-translator-for-baidu-translate' ); ?></p></td></tr>
 					<tr><th scope="row"><label for="htbd-baidu-app-id"><?php esc_html_e( 'Baidu application ID', 'hyx-translator-for-baidu-translate' ); ?></label></th><td><input id="htbd-baidu-app-id" name="htbd_settings[baidu_app_id]" type="text" value="<?php echo esc_attr( $settings['baidu_app_id'] ); ?>" class="regular-text" /></td></tr>
-					<tr><th scope="row"><label for="htbd-baidu-secret-key"><?php esc_html_e( 'Baidu secret key', 'hyx-translator-for-baidu-translate' ); ?></label></th><td><input id="htbd-baidu-secret-key" name="htbd_settings[baidu_secret_key]" type="password" value="<?php echo esc_attr( $settings['baidu_secret_key'] ); ?>" class="regular-text" autocomplete="new-password" /></td></tr>
+					<tr><th scope="row"><label for="htbd-baidu-secret-key"><?php esc_html_e( 'Baidu secret key', 'hyx-translator-for-baidu-translate' ); ?></label></th><td><input id="htbd-baidu-secret-key" name="htbd_settings[baidu_secret_key]" type="password" value="" class="regular-text" autocomplete="new-password" placeholder="<?php echo esc_attr( $has_secret_key ? __( 'Saved', 'hyx-translator-for-baidu-translate' ) : '' ); ?>" /><p class="description"><?php echo esc_html( $has_secret_key ? __( 'A secret key is stored. Leave this field blank to keep it, or enter a new key to replace it.', 'hyx-translator-for-baidu-translate' ) : __( 'Enter the secret key shown on the Baidu Translate Open Platform.', 'hyx-translator-for-baidu-translate' ) ); ?></p><?php if ( $has_secret_key ) : ?><p><label for="htbd-clear-secret-key"><input id="htbd-clear-secret-key" name="htbd_settings[clear_baidu_secret_key]" type="checkbox" value="1" /> <?php esc_html_e( 'Delete the stored secret key', 'hyx-translator-for-baidu-translate' ); ?></label></p><?php endif; ?></td></tr>
 					<tr><th scope="row"><label for="htbd-request-interval"><?php esc_html_e( 'Request interval', 'hyx-translator-for-baidu-translate' ); ?></label></th><td><input id="htbd-request-interval" name="htbd_settings[request_interval]" type="number" min="0" max="5000" step="100" value="<?php echo esc_attr( (int) $settings['request_interval'] ); ?>" class="small-text" /> <?php esc_html_e( 'milliseconds', 'hyx-translator-for-baidu-translate' ); ?><p class="description"><?php esc_html_e( 'Minimum delay between two Baidu Translate requests. The free plan allows one request per second, so 1000 is a safe default. Use 0 to disable throttling.', 'hyx-translator-for-baidu-translate' ); ?></p></td></tr>
 					<tr><th scope="row"><?php esc_html_e( 'Request logging', 'hyx-translator-for-baidu-translate' ); ?></th><td><label for="htbd-log-requests"><input id="htbd-log-requests" name="htbd_settings[log_requests]" type="checkbox" value="1" <?php checked( $settings['log_requests'] ); ?> /> <?php esc_html_e( 'Log each Baidu Translate request', 'hyx-translator-for-baidu-translate' ); ?></label><p class="description"><?php esc_html_e( 'When enabled, fires the htbd_translation_request_logged action with the language, field, text fingerprint, length, and result status. Credentials, source text, translated text, and full API responses are never included.', 'hyx-translator-for-baidu-translate' ); ?></p></td></tr>
 				</table>

@@ -38,6 +38,11 @@ require_once HTBD_PATH . 'includes/class-admin.php';
 require_once HTBD_PATH . 'includes/class-plugin.php';
 require_once HTBD_PATH . 'includes/class-uninstaller.php';
 
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once HTBD_PATH . 'includes/class-cli.php';
+	WP_CLI::add_command( 'htbd', 'HTBD_CLI_Command' );
+}
+
 register_activation_hook( HTBD_FILE, array( 'HTBD_Plugin', 'activate' ) );
 register_deactivation_hook( HTBD_FILE, array( 'HTBD_Plugin', 'deactivate' ) );
 

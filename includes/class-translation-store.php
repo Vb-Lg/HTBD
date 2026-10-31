@@ -217,6 +217,60 @@ class HTBD_Translation_Store {
 		);
 	}
 
+	/**
+	 * Row counts grouped by language and status, used by the CLI status
+	 * command and the diagnostics screen.
+	 *
+	 * @return array<int, array{target_language: string, status: string, total: int}>
+	 */
+	public function get_status_counts() {
+		global $wpdb;
+
+		return (array) $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Aggregate read of the plugin-owned table for reporting.
+			$wpdb->prepare( 'SELECT target_language, status, COUNT(*) AS total FROM %i GROUP BY target_language, status ORDER BY target_language, status', self::table_name() ),
+			ARRAY_A
+		);
+	}
+
+	/**
+	 * Returns stored translations for export.
+	 *
+	 * @param string $target_language Optional target language filter.
+	 * @param int    $limit           Maximum rows, 0 for no limit.
+	 * @return array<int, array<string, string>>
+	 */
+	public function get_translations( $target_language = '', $limit = 0 ) {
+		global $wpdb;
+
+		$table_name = self::table_name();
+		$columns    = 'identity_key, source_language, target_language, field_context, source_fingerprint, translated_value, status';
+		$limit_sql  = $limit > 0 ? ' LIMIT %d' : '';
+
+		if ( '' !== $target_language ) {
+			$args = array( $table_name, sanitize_key( $target_language ) );
+
+			if ( $limit > 0 ) {
+				$args[] = (int) $limit;
+			}
+
+			return (array) $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Explicit export of the plugin-owned table.
+				$wpdb->prepare( "SELECT {$columns} FROM %i WHERE target_language = %s ORDER BY id" . $limit_sql, $args ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Column list and limit clause are fixed fragments.
+				ARRAY_A
+			);
+		}
+
+		$args = array( $table_name );
+
+		if ( $limit > 0 ) {
+			$args[] = (int) $limit;
+		}
+
+		return (array) $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Explicit export of the plugin-owned table.
+			$wpdb->prepare( "SELECT {$columns} FROM %i ORDER BY id" . $limit_sql, $args ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Column list and limit clause are fixed fragments.
+			ARRAY_A
+		);
+	}
+
 	private function get_completed_item_count( $item_type, $item_ids, $target_languages, $language_placeholders, $since ) {
 		global $wpdb;
 

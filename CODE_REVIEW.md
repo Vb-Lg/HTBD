@@ -199,4 +199,6 @@ term 侧同理（`false` vs `true`，参数个数相同但值不同，也是两�
 - `normalize_domain` 拒绝本地主机 → 支持 `localhost` 与 IPv4（`tests/domain-normalize.php`）。
 - `the_title` 二次转义 → 改为 `wp_strip_all_tags()` 后返回纯文本。
 
-测试覆盖从 2 个文件扩到 5 个：`provider-batching`、`cron-scheduling`、`sitemap-fallback`、`store-context`、`domain-normalize`。路由改写与 `HTBD_Language_Router` 的全量集成仍无自动化测试，需要真实 WordPress 环境。
+测试覆盖从 2 个文件扩到 6 个：`provider-batching`、`cron-scheduling`、`sitemap-fallback`、`store-context`、`domain-normalize`、`language-router`。路由层通过假 `HTBD_Settings` 与桩函数覆盖了前缀剥离、子目录与域名 URL 生成、反向还原源站地址、以及从 query var 解析当前语言，共 18 项断言。
+
+唯一仍未覆盖的是 `redirect_admin_request_to_source()`：它在命中时会 `wp_redirect()` 并 `exit`，无法在进程内断言，只能靠真实环境验证。

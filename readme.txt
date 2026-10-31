@@ -80,6 +80,12 @@ Uninstalling removes plugin settings, scheduled tasks, and the custom translatio
 * Fix duplicate translation jobs caused by scheduling the same post with different argument lists.
 * Report the result of queueing and cache clearing actions in the admin.
 * Cache translation lookups per request and keep the original `created_at` when a translation is refreshed.
+* Serve localized sitemaps from a cached copy and answer the first request with a minimal sitemap instead of waiting on a request to the site itself.
+* Index translated rows by item and upgrade the table automatically on update, without needing a reactivation.
+* Hand generated SEO values to scheduled jobs through a transient instead of the cron option.
+* Keep the secret key out of the settings page markup, and only remove the original plugin's data on uninstall when this plugin migrated it.
+* Accept `localhost` and IPv4 addresses in domain bindings.
+* Poll translation progress only while the queue can still change.
 
 = 0.3.1 =
 

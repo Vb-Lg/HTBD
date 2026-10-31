@@ -187,5 +187,16 @@ term 侧同理（`false` vs `true`，参数个数相同但值不同，也是两�
 
 新增功能：hreflang 与 sitemap alternates（功能 1）、批量限速管线（功能 2）、语言切换器（功能 3）、WP-CLI（功能 4）、自定义文章类型与分类法（功能 6）、诊断面板（功能 8）。
 
-仍未处理（按优先级）：sitemap 自请求导致的单 worker 自锁风险、`SUBSTRING_INDEX` 全表扫描、SEO 任务把整段正文塞进 cron args、后台 JS 每 5 秒无条件轮询、密钥明文回填到 `input value`、`normalize_domain` 拒绝 IP / localhost / 端口、卸载时无条件删除 legacy 表、`install()` 缺少表结构升级路径。
+剩余项已于同一天全部处理：
 
+- sitemap 自请求 → 改为 `HTBD_Cron::SITEMAP_REFRESH` 异步抓取 + 15 分钟缓存 + 首次请求返回最小 sitemap（`tests/sitemap-fallback.php`）。
+- `SUBSTRING_INDEX` 全表扫描 → 新增 `item_type` / `item_id` 列与 `item_lookup` 索引，进度、失败、列表列查询全部改用索引列。
+- SEO 任务把正文塞进 cron args → 改为 transient 传值，args 只留键名。
+- `install()` 无升级路径 → 新增 `htbd_db_version` 与 `maybe_upgrade()`，升级时 `dbDelta` + 回填历史行。
+- 后台 JS 每 5 秒轮询 → 完成后停表、隐藏暂停、失败指数退避（上限 60s）。
+- 密钥明文回填 → 输出空值 + 占位提示 + 「删除已保存密钥」开关，留空保留旧值。
+- 卸载误删 legacy 数据 → 新增迁移标记，仅在本插件接管过数据时才清理 `btranslate_*`。
+- `normalize_domain` 拒绝本地主机 → 支持 `localhost` 与 IPv4（`tests/domain-normalize.php`）。
+- `the_title` 二次转义 → 改为 `wp_strip_all_tags()` 后返回纯文本。
+
+测试覆盖从 2 个文件扩到 5 个：`provider-batching`、`cron-scheduling`、`sitemap-fallback`、`store-context`、`domain-normalize`。路由改写与 `HTBD_Language_Router` 的全量集成仍无自动化测试，需要真实 WordPress 环境。

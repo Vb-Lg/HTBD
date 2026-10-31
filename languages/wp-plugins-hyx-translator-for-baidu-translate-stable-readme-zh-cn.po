@@ -2,7 +2,7 @@
 # This file is distributed under the same license as the Plugins - HTBD &#8211; hyx Translator powered by Baidu Translate - Stable Readme (latest release) package.
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-10-31 04:00+0000\n"
+"PO-Revision-Date: 2026-10-31 04:30+0000\n"
 "Last-Translator: HTBD contributors\n"
 "Language-Team: Chinese (China)\n"
 "MIME-Version: 1.0\n"
@@ -260,3 +260,33 @@ msgstr "后台执行排队与清空缓存操作后会显示结果提示。"
 #, gp-priority: low
 msgid "Cache translation lookups per request and keep the original <code>created_at</code> when a translation is refreshed."
 msgstr "译文查询增加请求级缓存，刷新译文时保留原始 <code>created_at</code>。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Serve localized sitemaps from a cached copy and answer the first request with a minimal sitemap instead of waiting on a request to the site itself."
+msgstr "本地化站点地图改为读取缓存副本，首次请求直接返回最小站点地图，不再等待对本站自身的请求。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Index translated rows by item and upgrade the table automatically on update, without needing a reactivation."
+msgstr "按条目为译文行建立索引，更新插件时自动升级数据表，无需重新启用插件。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Hand generated SEO values to scheduled jobs through a transient instead of the cron option."
+msgstr "动态生成的 SEO 取值通过 transient 传给计划任务，不再写入 cron 选项。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Keep the secret key out of the settings page markup, and only remove the original plugin's data on uninstall when this plugin migrated it."
+msgstr "密钥不再出现在设置页源码中；仅在插件执行过数据迁移时，卸载才会清理原版插件的数据。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Accept <code>localhost</code> and IPv4 addresses in domain bindings."
+msgstr "域名绑定支持 <code>localhost</code> 与 IPv4 地址。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Poll translation progress only while the queue can still change."
+msgstr "仅在队列仍可能变化时轮询翻译进度。"

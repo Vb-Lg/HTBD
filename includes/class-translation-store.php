@@ -3,8 +3,10 @@
 defined( 'ABSPATH' ) || exit;
 
 class HTBD_Translation_Store {
-	const DB_VERSION        = 2;
-	const DB_VERSION_OPTION = 'htbd_db_version';
+	const DB_VERSION              = 2;
+	const DB_VERSION_OPTION       = 'htbd_db_version';
+	const LEGACY_MIGRATION_OPTION = 'htbd_migrated_from_btranslate';
+	const LEGACY_TABLE_SUFFIX     = 'btranslate_translations';
 
 	/**
 	 * Request-level cache of find_valid() lookups. A single page render asks
@@ -26,11 +28,12 @@ class HTBD_Translation_Store {
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
 		$table_name      = self::table_name();
-		$legacy_table    = $wpdb->prefix . 'btranslate_translations';
+		$legacy_table    = $wpdb->prefix . self::LEGACY_TABLE_SUFFIX;
 		$table_exists    = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table_name ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Checks the plugin-owned table during activation.
 		$legacy_exists   = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $legacy_table ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Checks for the legacy plugin-owned table during activation.
 		if ( $legacy_exists === $legacy_table && $table_exists !== $table_name ) {
 			$wpdb->query( $wpdb->prepare( 'RENAME TABLE %i TO %i', $legacy_table, $table_name ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Migrates persisted translations to the renamed table.
+			update_option( self::LEGACY_MIGRATION_OPTION, 1, false );
 		}
 
 		$charset_collate = $wpdb->get_charset_collate();

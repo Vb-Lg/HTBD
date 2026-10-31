@@ -10,6 +10,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 require_once __DIR__ . '/includes/class-cron.php';
+require_once __DIR__ . '/includes/class-translation-store.php';
 require_once __DIR__ . '/includes/class-uninstaller.php';
 
 HTBD_Uninstaller::uninstall();

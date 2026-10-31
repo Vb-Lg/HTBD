@@ -3,12 +3,19 @@
 defined( 'ABSPATH' ) || exit;
 
 class HTBD_Uninstaller {
+	/**
+	 * Options this plugin owns. Options that belong to the original plugin are
+	 * only removed when this plugin took them over during a migration.
+	 */
 	private const OPTION_NAMES = array(
 		'htbd_settings',
 		'htbd_db_version',
 		'htbd_flush_rewrite_rules',
 		'htbd_translation_task',
 		'htbd_retranslation_batch',
+	);
+
+	private const LEGACY_OPTION_NAMES = array(
 		'btranslate_settings',
 		'btranslate_flush_rewrite_rules',
 		'btranslate_translation_task',
@@ -36,6 +43,8 @@ class HTBD_Uninstaller {
 		foreach ( self::OPTION_NAMES as $option_name ) {
 			delete_site_option( $option_name );
 		}
+
+		delete_site_option( HTBD_Translation_Store::LEGACY_MIGRATION_OPTION );
 	}
 
 	private static function delete_site_data() {
@@ -47,12 +56,18 @@ class HTBD_Uninstaller {
 			delete_option( $option_name );
 		}
 
-		$table_names = array(
-			$wpdb->prefix . 'hyx_bd_translations',
-			$wpdb->prefix . 'btranslate_translations',
-		);
-		foreach ( $table_names as $table_name ) {
-			$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table_name ) );
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', HTBD_Translation_Store::table_name() ) );
+
+		// The legacy plugin may still be installed and using its own settings
+		// and table. Only touch them when this plugin renamed or adopted them.
+		if ( get_option( HTBD_Translation_Store::LEGACY_MIGRATION_OPTION, false ) ) {
+			$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $wpdb->prefix . HTBD_Translation_Store::LEGACY_TABLE_SUFFIX ) );
+
+			foreach ( self::LEGACY_OPTION_NAMES as $option_name ) {
+				delete_option( $option_name );
+			}
+
+			delete_option( HTBD_Translation_Store::LEGACY_MIGRATION_OPTION );
 		}
 	}
 }

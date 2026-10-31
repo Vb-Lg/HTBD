@@ -172,8 +172,8 @@ class HTBD_Content_Controller {
 
 	public function translate_content( $content ) {
 		$post_id = get_the_ID();
-		if ( ! $post_id || false === strpos( $content, '<' ) ) {
-			return $this->escaped_translated_value( $content, 'post:' . $post_id . ':post_content' );
+		if ( ! $post_id ) {
+			return $content;
 		}
 
 		$segments = HTBD_Content_Translator::segments( $content );
@@ -216,8 +216,14 @@ class HTBD_Content_Controller {
 		return $attributes;
 	}
 
-	public function translate_term_title( $term_name, $term ) {
-		return $this->escaped_translated_value( $term_name, 'term:' . $term->term_id . ':name' );
+	public function translate_term_title( $term_name, $term = null ) {
+		$term_id = $term instanceof WP_Term ? (int) $term->term_id : (int) get_queried_object_id();
+
+		if ( ! $term_id ) {
+			return $term_name;
+		}
+
+		return $this->escaped_translated_value( $term_name, 'term:' . $term_id . ':name' );
 	}
 
 	public function translate_term_description( $description, $term_id, $taxonomy ) {
@@ -275,7 +281,7 @@ class HTBD_Content_Controller {
 	}
 
 	public function translate_term_object( $term, $taxonomy, $context = '' ) {
-		if ( ! $term instanceof WP_Term || ! in_array( $term->taxonomy, array( 'category', 'post_tag' ), true ) ) {
+		if ( ! $term instanceof WP_Term || ! in_array( $term->taxonomy, array( 'category', 'post_tag' ), true ) || ! $this->is_render_context() ) {
 			return $term;
 		}
 
@@ -325,6 +331,18 @@ class HTBD_Content_Controller {
 
 	public function localize_permalink( $url ) {
 		return $this->router->localized_url( $url );
+	}
+
+	private function is_render_context() {
+		if ( is_admin() || wp_doing_ajax() || wp_doing_cron() ) {
+			return false;
+		}
+
+		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+			return false;
+		}
+
+		return ! defined( 'WP_CLI' ) || ! WP_CLI;
 	}
 
 	private function translated_value( $source_value, $context ) {

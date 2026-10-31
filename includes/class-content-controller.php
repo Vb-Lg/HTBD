@@ -188,7 +188,15 @@ class HTBD_Content_Controller {
 
 		$translated_title = $this->translated_value( $source_title, 'post:' . $post_id . ':post_title' );
 
-		return $translated_title !== $source_title ? esc_html( $translated_title ) : $title;
+		if ( $translated_title === $source_title ) {
+			return $title;
+		}
+
+		// The title is plain text. Strip tags so no markup can be injected, but
+		// do not escape it here: the_title callbacks receive an unescaped value
+		// and themes escape it themselves, so escaping twice would turn an
+		// ampersand into &amp;amp;.
+		return wp_strip_all_tags( $translated_title );
 	}
 
 	public function translate_content( $content ) {
@@ -244,7 +252,9 @@ class HTBD_Content_Controller {
 			return $term_name;
 		}
 
-		return $this->escaped_translated_value( $term_name, 'term:' . $term_id . ':name' );
+		$translated_name = $this->translated_value( $term_name, 'term:' . $term_id . ':name' );
+
+		return $translated_name === $term_name ? $term_name : sanitize_text_field( $translated_name );
 	}
 
 	public function translate_term_description( $description, $term_id, $taxonomy ) {

@@ -239,6 +239,31 @@ class HTBD_Settings {
 		$domain = explode( '/', $domain, 2 )[0];
 		$domain = preg_replace( '/:\d+$/', '', $domain );
 
-		return preg_match( '/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/', $domain ) ? $domain : '';
+		return self::is_valid_domain( $domain ) ? $domain : '';
+	}
+
+	/**
+	 * Accepts a regular host name, an IPv4 address, or a single label such as
+	 * localhost, so domain routing can be tested on a development machine.
+	 * IPv6 literals are not supported because the port is stripped before the
+	 * check and brackets would need their own handling.
+	 *
+	 * @param string $domain Lower case host without scheme, path, or port.
+	 * @return bool
+	 */
+	private static function is_valid_domain( $domain ) {
+		if ( '' === $domain || strlen( $domain ) > 253 ) {
+			return false;
+		}
+
+		if ( preg_match( '/^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/', $domain ) ) {
+			return true;
+		}
+
+		if ( preg_match( '/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/', $domain ) ) {
+			return true;
+		}
+
+		return (bool) preg_match( '/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/', $domain );
 	}
 }

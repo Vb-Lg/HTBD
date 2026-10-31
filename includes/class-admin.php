@@ -329,8 +329,8 @@ class HTBD_Admin {
 
 		foreach ( $post_ids as $post_id ) {
 			foreach ( $languages as $target_language ) {
-				$this->clear_scheduled_event( 'htbd_process_translation', array( $post_id, $target_language, true ) );
-				wp_schedule_single_event( $next_run, 'htbd_process_translation', array( $post_id, $target_language, true ) );
+				HTBD_Cron::clear_post( $post_id, $target_language );
+				HTBD_Cron::schedule_post( $post_id, $target_language, true, $next_run );
 				$next_run += 2;
 				++$scheduled;
 			}
@@ -338,8 +338,8 @@ class HTBD_Admin {
 
 		foreach ( $term_ids as $term_id ) {
 			foreach ( $languages as $target_language ) {
-				$this->clear_scheduled_event( 'htbd_process_term_translation', array( $term_id, $target_language, true ) );
-				wp_schedule_single_event( $next_run, 'htbd_process_term_translation', array( $term_id, $target_language, true ) );
+				HTBD_Cron::clear_term( $term_id, $target_language );
+				HTBD_Cron::schedule_term( $term_id, $target_language, true, $next_run );
 				$next_run += 2;
 				++$scheduled;
 			}
@@ -367,21 +367,13 @@ class HTBD_Admin {
 		}
 
 		if ( '' === $target_language ) {
-			wp_clear_scheduled_hook( 'htbd_process_translation' );
-			wp_clear_scheduled_hook( 'htbd_process_term_translation' );
-			wp_clear_scheduled_hook( 'htbd_process_seo_output_translation' );
+			HTBD_Cron::clear_hooks();
 			delete_option( 'htbd_translation_task' );
 			delete_option( 'htbd_retranslation_batch' );
 		}
 
 		wp_safe_redirect( add_query_arg( 'htbd_cache_cleared', $target_language ? $target_language : 1, admin_url( 'options-general.php?page=htbd' ) ) );
 		exit;
-	}
-
-	private function clear_scheduled_event( $hook, $args ) {
-		while ( false !== ( $timestamp = wp_next_scheduled( $hook, $args ) ) ) {
-			wp_unschedule_event( $timestamp, $hook, $args );
-		}
 	}
 
 	public function add_plugin_settings_link( $links ) {
@@ -480,7 +472,8 @@ class HTBD_Admin {
 
 		check_admin_referer( 'htbd_translate_post_' . $post_id . '_' . $target_language );
 		$this->update_translation_task( array( $post_id ), array(), array( $target_language ) );
-		wp_schedule_single_event( time() + 5, 'htbd_process_translation', array( $post_id, $target_language, $force_refresh ) );
+		HTBD_Cron::clear_post( $post_id, $target_language );
+		HTBD_Cron::schedule_post( $post_id, $target_language, $force_refresh, time() + 5 );
 
 		wp_safe_redirect( wp_get_referer() ? wp_get_referer() : admin_url( 'edit.php?post_type=' . get_post_type( $post_id ) ) );
 		exit;
@@ -498,9 +491,11 @@ class HTBD_Admin {
 		check_admin_referer( 'htbd_retry_failed_translation_' . $item_type . '_' . $item_id . '_' . $target_language );
 
 		if ( 'post' === $item_type ) {
-			wp_schedule_single_event( time() + 5, 'htbd_process_translation', array( $item_id, $target_language, true ) );
+			HTBD_Cron::clear_post( $item_id, $target_language );
+			HTBD_Cron::schedule_post( $item_id, $target_language, true, time() + 5 );
 		} else {
-			wp_schedule_single_event( time() + 5, 'htbd_process_term_translation', array( $item_id, $target_language, true ) );
+			HTBD_Cron::clear_term( $item_id, $target_language );
+			HTBD_Cron::schedule_term( $item_id, $target_language, true, time() + 5 );
 		}
 
 		wp_safe_redirect( admin_url( 'options-general.php?page=htbd' ) );

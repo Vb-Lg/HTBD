@@ -14,15 +14,6 @@ class HTBD_Uninstaller {
 		'btranslate_retranslation_batch',
 	);
 
-	private const CRON_HOOKS = array(
-		'htbd_process_translation',
-		'htbd_process_term_translation',
-		'htbd_process_seo_output_translation',
-		'btranslate_process_translation',
-		'btranslate_process_term_translation',
-		'btranslate_process_seo_output_translation',
-	);
-
 	public static function uninstall() {
 		if ( is_multisite() ) {
 			$site_ids = get_sites(
@@ -49,9 +40,7 @@ class HTBD_Uninstaller {
 	private static function delete_site_data() {
 		global $wpdb;
 
-		foreach ( self::CRON_HOOKS as $hook_name ) {
-			wp_clear_scheduled_hook( $hook_name );
-		}
+		HTBD_Cron::clear_hooks();
 
 		foreach ( self::OPTION_NAMES as $option_name ) {
 			delete_option( $option_name );

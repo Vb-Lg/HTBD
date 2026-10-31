@@ -30,9 +30,7 @@ class HTBD_Plugin {
 
 	public static function activate() {
 		HTBD_Translation_Store::install();
-		wp_clear_scheduled_hook( 'btranslate_process_translation' );
-		wp_clear_scheduled_hook( 'btranslate_process_term_translation' );
-		wp_clear_scheduled_hook( 'btranslate_process_seo_output_translation' );
+		HTBD_Cron::clear_hooks();
 		$legacy_settings = get_option( 'btranslate_settings', null );
 		if ( null !== $legacy_settings && false === get_option( 'htbd_settings', false ) ) {
 			add_option( 'htbd_settings', $legacy_settings, '', false );
@@ -56,9 +54,7 @@ class HTBD_Plugin {
 	}
 
 	public static function deactivate() {
-		wp_clear_scheduled_hook( 'htbd_process_translation' );
-		wp_clear_scheduled_hook( 'htbd_process_term_translation' );
-		wp_clear_scheduled_hook( 'htbd_process_seo_output_translation' );
+		HTBD_Cron::clear_hooks();
 		flush_rewrite_rules();
 	}
 

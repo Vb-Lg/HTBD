@@ -48,8 +48,8 @@ class HTBD_Content_Controller {
 		}
 
 		foreach ( HTBD_Settings::target_languages() as $target_language ) {
-			if ( ! wp_next_scheduled( 'htbd_process_translation', array( $post_id, $target_language ) ) ) {
-				wp_schedule_single_event( time() + 10, 'htbd_process_translation', array( $post_id, $target_language ) );
+			if ( ! HTBD_Cron::is_post_scheduled( $post_id, $target_language ) ) {
+				HTBD_Cron::schedule_post( $post_id, $target_language );
 			}
 		}
 	}
@@ -108,8 +108,8 @@ class HTBD_Content_Controller {
 		}
 
 		foreach ( HTBD_Settings::target_languages() as $target_language ) {
-			if ( ! wp_next_scheduled( 'htbd_process_term_translation', array( $term_id, $target_language, false ) ) ) {
-				wp_schedule_single_event( time() + 10, 'htbd_process_term_translation', array( $term_id, $target_language, false ) );
+			if ( ! HTBD_Cron::is_term_scheduled( $term_id, $target_language ) ) {
+				HTBD_Cron::schedule_term( $term_id, $target_language );
 			}
 		}
 	}

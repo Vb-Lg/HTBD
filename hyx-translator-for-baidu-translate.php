@@ -22,6 +22,7 @@ define( 'HTBD_PATH', plugin_dir_path( __FILE__ ) );
 
 require_once HTBD_PATH . 'includes/interface-translation-provider.php';
 require_once HTBD_PATH . 'includes/class-translation-result.php';
+require_once HTBD_PATH . 'includes/class-cron.php';
 require_once HTBD_PATH . 'includes/class-translation-identity.php';
 require_once HTBD_PATH . 'includes/class-translation-store.php';
 require_once HTBD_PATH . 'includes/class-baidu-provider.php';

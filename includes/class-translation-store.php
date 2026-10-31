@@ -3,6 +3,14 @@
 defined( 'ABSPATH' ) || exit;
 
 class HTBD_Translation_Store {
+	/**
+	 * Request-level cache of find_valid() lookups. A single page render asks
+	 * for the same title, term, and permalink translations many times.
+	 *
+	 * @var array<string, array|null>
+	 */
+	private $cache = array();
+
 	public static function table_name() {
 		global $wpdb;
 
@@ -46,7 +54,11 @@ class HTBD_Translation_Store {
 	public function find_valid( $identity_key ) {
 		global $wpdb;
 
-		return $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- The custom translation table is the plugin's persistent cache.
+		if ( array_key_exists( $identity_key, $this->cache ) ) {
+			return $this->cache[ $identity_key ];
+		}
+
+		$row = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- The custom translation table is the plugin's persistent cache, cached per request below.
 			$wpdb->prepare(
 				"SELECT * FROM %i WHERE identity_key = %s AND status IN ('complete', 'manual') LIMIT 1",
 				self::table_name(),
@@ -54,6 +66,10 @@ class HTBD_Translation_Store {
 			),
 			ARRAY_A
 		);
+
+		$this->cache[ $identity_key ] = $row;
+
+		return $row;
 	}
 
 	public function save( $identity_key, $source_language, $target_language, $field_context, $source_fingerprint, $translated_value, $status ) {
@@ -61,21 +77,36 @@ class HTBD_Translation_Store {
 
 		$now = current_time( 'mysql', true );
 
-		return $wpdb->replace( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Writes to the plugin-owned persistent translation cache.
-			self::table_name(),
-			array(
-				'identity_key'       => $identity_key,
-				'source_language'    => $source_language,
-				'target_language'    => $target_language,
-				'field_context'      => $field_context,
-				'source_fingerprint' => $source_fingerprint,
-				'translated_value'   => $translated_value,
-				'status'             => $status,
-				'created_at'         => $now,
-				'updated_at'         => $now,
-			),
-			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+		// INSERT ... ON DUPLICATE KEY UPDATE instead of REPLACE so created_at
+		// keeps the first write time and the auto increment value is stable.
+		$result = $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Writes to the plugin-owned persistent translation cache.
+			$wpdb->prepare(
+				"INSERT INTO %i (identity_key, source_language, target_language, field_context, source_fingerprint, translated_value, status, created_at, updated_at)
+				VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+				ON DUPLICATE KEY UPDATE
+					source_language = VALUES(source_language),
+					target_language = VALUES(target_language),
+					field_context = VALUES(field_context),
+					source_fingerprint = VALUES(source_fingerprint),
+					translated_value = VALUES(translated_value),
+					status = VALUES(status),
+					updated_at = VALUES(updated_at)",
+				self::table_name(),
+				$identity_key,
+				$source_language,
+				$target_language,
+				$field_context,
+				$source_fingerprint,
+				$translated_value,
+				$status,
+				$now,
+				$now
+			)
 		);
+
+		unset( $this->cache[ $identity_key ] );
+
+		return $result;
 	}
 
 	public function save_manual( $identity_key, $source_language, $target_language, $field_context, $source_fingerprint, $translated_value ) {
@@ -84,6 +115,8 @@ class HTBD_Translation_Store {
 
 	public function clear( $target_language = '' ) {
 		global $wpdb;
+
+		$this->cache = array();
 
 		if ( '' !== $target_language ) {
 			return $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- This explicitly clears one language from the plugin's persistent translation cache.

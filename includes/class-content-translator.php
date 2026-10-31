@@ -15,8 +15,10 @@ class HTBD_Content_Translator {
 			return HTBD_Translation_Result::failure( 'content_parse_failed', 'Unable to protect links before translation.' );
 		}
 
+		$items           = array();
 		$text_index      = 0;
 		$protected_depth = 0;
+
 		foreach ( $segments as $segment ) {
 			if ( self::is_tag( $segment ) ) {
 				$protected_depth = self::protected_depth_after_tag( $segment, $protected_depth );
@@ -27,12 +29,24 @@ class HTBD_Content_Translator {
 				continue;
 			}
 
-			$result = $this->service->get_or_translate( trim( $segment ), $source_language, $target_language, $context . ':text:' . $text_index, $force_refresh );
+			$items[] = array(
+				'text'    => trim( $segment ),
+				'context' => $context . ':text:' . $text_index,
+			);
+
+			++$text_index;
+		}
+
+		if ( empty( $items ) ) {
+			return HTBD_Translation_Result::success( $content );
+		}
+
+		$results = $this->service->translate_many( $items, $source_language, $target_language, $force_refresh );
+
+		foreach ( $results as $result ) {
 			if ( ! $result->success ) {
 				return $result;
 			}
-
-			++$text_index;
 		}
 
 		return HTBD_Translation_Result::success( $content );

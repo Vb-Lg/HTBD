@@ -1,204 +1,198 @@
-# HTBD 全仓代码质量审查
+# HTBD 全仓代码质量 / 新功能审查（v1.0.0 之后）
 
-- 审查范围：`hyx-translator-for-baidu-translate.php`、`includes/` 全部 14 个文件、`assets/js/admin.js`、`uninstall.php`、`build.sh`、`.github/workflows/`、`README.md` / `README.zh-CN.md` / `readme.txt`
-- 基线：`a1f7933`（master，v0.3.1 之后）
-- 方法：逐文件静态审查 + WordPress 钩子签名核对（`single_term_title`、`term_description`、`do_parse_request`、`home_url` 等）
+- 审查基线：`e6f87b3`（tag `v1.0.0`，master）
+- 审查范围：`hyx-translator-for-baidu-translate.php`、`includes/` 全部 19 个文件、`assets/js/*.js`、`tests/` 6 个脚本、`uninstall.php`、`build.sh`、`.github/workflows/`、`README.md` / `README.zh-CN.md` / `readme.txt` / `languages/*.po`
+- 方法：逐文件静态审查 + 钩子签名核对 + 可执行探针复现（`/tmp` 下临时脚本，未入库）+ 构建与测试实跑
 
 ## 一、结论概览
 
 | 级别 | 数量 | 含义 |
 | --- | --- | --- |
-| P0 | 2 | 会直接 500 / 违反插件目录规范，必须尽快修 |
-| P1 | 6 | 功能实际不生效或产生重复开销 |
-| P2 | 12 | 性能、健壮性、可维护性问题 |
+| P0 | 0 | 无 500 / 违反插件目录规范的问题 |
+| P1 | 2 | 功能实际不生效、或产生重复收录 |
+| P2 | 5 | 一致性、数据膨胀、性能、文档承诺落空 |
+| P3 | 5 | 健壮性、死代码、验证盲区 |
 
-架构分层方向是对的：路由 / Provider / Service / Store / 渲染 / 后台分离清晰，Provider 通过接口隔离，identity 由「源文指纹 + 源语言 + 目标语言 + 字段上下文 + provider 版本」构成，符合 `AGENTS.md` 约定。主要问题集中在**钩子签名、读写路径一致性、以及「README 承诺 > 代码实现」**三处。
+v0.3.1 → v1.0.0 那一轮的 P0/P1/P2 已全部落地，且落地质量可以核对：`single_term_title` 签名已改默认值、hreflang/canonical 已实现、cron 参数统一、批量+限速+重试已就位、sitemap 改为异步抓取、`item_type`/`item_id` 索引列已加。
 
-## 二、P0 问题
+本轮新发现的问题集中在**一个模式**上：**同一条「按段切分并编号」的规则被复制了三份**，而其中一份（后台手动翻译编辑器）漏了 `<pre>/<code>` 保护深度，导致编号漂移。这是本轮唯一会让功能"静默不生效"的缺陷。
 
-### P0-1 `single_term_title` 回调参数数量不匹配 → 分类/标签归档页致命错误
+## 二、P1 问题
 
-`includes/class-content-controller.php:25`：
+### P1-1 手动翻译编辑器的段落下标漂移 → 手工译文静默不生效
 
-```php
-add_filter( 'single_term_title', array( $this, 'translate_term_title' ), 20, 2 );
+同一段内容在三个地方各自走一遍分段循环：
+
+| 位置 | 循环 | 是否跟踪 `protected_depth` |
+| --- | --- | --- |
+| 写入（cron） | `includes/class-content-translator.php:22-38` | 是 |
+| 读取（前台渲染） | `includes/class-content-controller.php:213-228` | 是 |
+| 读取（后台编辑框） | `includes/class-admin.php:140-149` | **否** |
+
+`class-admin.php:142` 只判了 `is_tag() || '' === trim()`，没有调用 `HTBD_Content_Translator::protected_depth_after_tag()`。
+
+实测（`<p>Intro</p><pre><code>echo 1;</code></pre><p>Outro</p>`）：
+
+```
+cron   : text:0 => Intro | text:1 => Outro
+admin  : text:0 => Intro | text:1 => echo 1; | text:2 => Outro
+render : text:0 => Intro | text:1 => Outro
+cron/render AGREE
+cron/admin DIVERGE
 ```
 
-`includes/class-content-controller.php:219`：
+后果有两层，都是静默的：
+
+1. 编辑框里显示的是「译文 A 搭配原文 B」的错误对照（第 2 段显示代码块内容，却挂着第 3 段的译文），用户看到的就是错的；
+2. 保存时 `save_translation_meta_box()` 用偏移后的 `$field['source_value']` + 偏移后的 context 计算 identity，落库的 `manual` 行与渲染端查的 key 不同 → 手工译文**永远不会出现在前台**，且不报错。只要文章里出现过 `<pre>`/`<code>`，其后所有段落的手工翻译全部失效。
+
+修复建议：把「分段 → (text, context_index)」抽成 `HTBD_Content_Translator` 的一个静态方法（例如 `segments_with_context( $content )`），三处调用同一实现，彻底消掉复制粘贴。参考实现：
 
 ```php
-public function translate_term_title( $term_name, $term ) {
-	return $this->escaped_translated_value( $term_name, 'term:' . $term->term_id . ':name' );
+/**
+ * @return array<int, array{text: string, index: int}> 或 false（解析失败）
+ */
+public static function translatable_segments( $content ) {
+	$segments = self::segments( $content );
+
+	if ( false === $segments ) {
+		return false;
+	}
+
+	$items  = array();
+	$index  = 0;
+	$depth  = 0;
+
+	foreach ( $segments as $segment ) {
+		if ( self::is_tag( $segment ) ) {
+			$depth = self::protected_depth_after_tag( $segment, $depth );
+			continue;
+		}
+
+		if ( 0 < $depth || '' === trim( $segment ) ) {
+			continue;
+		}
+
+		$whitespace = self::surrounding_whitespace( $segment );
+		$items[]    = array(
+			'text'  => $whitespace['text'],
+			'index' => $index,
+		);
+
+		++$index;
+	}
+
+	return $items;
 }
 ```
 
-WordPress 的 `single_term_title` 只传 1 个参数（`wp-includes/general-template.php`：`apply_filters( 'single_term_title', $term->name )`）。`WP_Hook::apply_filters()` 在 `accepted_args >= num_args` 时只按实际参数个数调用，不会补位，因此 PHP 8 会抛 `ArgumentCountError`。凡是调用 `single_term_title()` / `get_the_archive_title()` 的归档页（绝大多数主题）都会白屏。
+三处改为消费这个结果。回归测试见下文「测试盲区」。
 
-修复建议（同时消除对 `$term` 的依赖）：
+### P1-2 域名绑定 + 子目录同时开启时，同一译文有两个自指 canonical 的 URL
+
+`HTBD_Settings::subdirectory_languages()`（`class-settings.php:82`）直接返回全部目标语言，没有排除已被域名绑定的语言。于是当 `routing_mode = ['subdirectory','domain']` 且 `en.example.com = en` 时，英文同时可从两个地址访问且各自 canonical 到自己：
+
+```
+page https://example.com/en/about/   self URL = https://example.com/en/about/
+page https://en.example.com/about/   self URL = https://en.example.com/about/
+sitemap/hreflang URL for en               = https://en.example.com/about/
+```
+
+即：hreflang 与 sitemap 只承认域名版，但 `/en/` 那份照样 200、照样自指 canonical → 每个英文页被搜索引擎收录两份。这同时违反 `AGENTS.md` 的硬性约定「Avoid serving the same translation at multiple canonical URLs」。
+
+顺带说明：`resolve_domain_language()` 对「绑定域名 + 语言前缀」返回 404 是对的，但反向（源站上的语言前缀）没有对应处理。
+
+修复建议：把被绑定的语言从子目录集合里剔除，一处改动即可同时修好路由、canonical、sitemap、切换器：
 
 ```php
-public function translate_term_title( $term_name, $term = null ) {
-	$term_id = $term instanceof WP_Term ? $term->term_id : (int) get_queried_object_id();
+public static function subdirectory_languages() {
+	$settings = self::get();
+	$bound    = empty( $settings['domain_bindings'] ) || ! self::is_routing_mode_enabled( 'domain' )
+		? array()
+		: array_values( array_map( 'sanitize_key', (array) $settings['domain_bindings'] ) );
 
-	if ( ! $term_id ) {
-		return $term_name;
-	}
-
-	return $this->escaped_translated_value( $term_name, 'term:' . $term_id . ':name' );
+	return array_values( array_diff( self::target_languages(), $bound ) );
 }
 ```
 
-并建议全仓复核一次钩子签名（`accepted_args` 必须 ≥ 回调中**无默认值**的参数个数）。其余已核对无误的钩子：`the_title`(2)、`get_the_excerpt`(2)、`get_post_metadata`(4)、`get_term`(3)、`document_title_parts`(1)、`post_link`/`term_link`(2)、`home_url`/`site_url`(4)、`do_parse_request`(3)、`wp_get_attachment_image_attributes`(2)。
+并补一条测试：`/en/` 在语言被绑定域名时必须 404（或 301 到域名版，二选一，写进 README）。
 
-### P0-2 README 宣称的 canonical / hreflang 在代码中不存在
+## 三、P2 问题
 
-```bash
-$ grep -rn "hreflang\|canonical\|wp_head" --include=*.php .
-# 无输出
-```
+### P2-1 `HTBD_Content_Translator::translate()` 返回的是未翻译的源文
 
-但 `README.md:62-70`、`README.zh-CN.md:62-70` 的「Multilingual SEO / 多语言 SEO」明确列出 *Canonical URLs* 与 *`hreflang` alternate links*，`readme.txt` 第 21 行也暗示路由与 SEO 输出完备，`AGENTS.md` 同样把它列为硬性要求。
+`class-content-translator.php:52` 最终 `return HTBD_Translation_Result::success( $content );` —— 段落译文全部写进了 store，但返回值是原内容。目前唯一调用方（`class-content-controller.php:94`）丢弃了返回值，所以线上没有症状；但这个方法名与返回值给了错误的契约，后续任何人把它接到渲染路径上就会"翻译无效"。
 
-插件已通过 WordPress.org 审核，此时「文档承诺 > 实际功能」属于典型的高风险项（审核复查 / 用户投诉 / 支持成本）。二选一，不能放着：
+建议改名以表明副作用语义（`warm()` / `prime_store()`），返回结果数组或计数；或者反过来——让它成为唯一实现并应用译文，让 `translate_content()` 只负责查缓存渲染。后者能顺带消灭 P1-1 的三份副本。
 
-- 实现：在 `wp_head` 输出 `<link rel="canonical">` 与全语言 `<link rel="alternate" hreflang="…">`，并在 sitemap 里补 `xhtml:link` alternate（`class-sitemap-controller.php` 已经有改写 sitemap 的能力，可直接复用 `localized_url()`）；
-- 或先删掉 README / readme.txt 中的对应表述，等功能上线再加回。
+### P2-2 `fallback_language` 是死设置，文档承诺落空
 
-**建议直接实现**，因为 SEO 是多语言插件的第一卖点，且 `localized_url()` 已经能算出所有语言 URL，成本不高。
+`class-settings.php:24` 定义默认值、`class-admin.php:245` 清洗保存，但全仓**没有任何读取点**（`grep -rn fallback_language` 仅命中这两行），设置页也没有对应输入框——所以它永远被重置成 `zh`。
 
-## 三、P1 问题
+而 `README.md:86-91`「Failure Fallback」写的是"显示源语言内容"，`AGENTS.md` 写的是"render the configured source-language fallback"。二者目前实际行为一致（都是源文），但多出一个永远为 `zh` 的配置项，属于「配置项存在 = 功能存在」的误导。
 
-### P1-1 纯文本文章永远翻译不出来（读写 key 不一致）
+二选一：删掉该键（defaults + sanitize 两处），或实现它（无译文时按 `fallback_language` 路由）。建议后者放进术语表那一轮一起做。
 
-`includes/class-content-controller.php:173-177`：
+### P2-3 没有删除生命周期，译文表只会增长
 
-```php
-public function translate_content( $content ) {
-	$post_id = get_the_ID();
-	if ( ! $post_id || false === strpos( $content, '<' ) ) {
-		return $this->escaped_translated_value( $content, 'post:' . $post_id . ':post_content' );
-	}
-```
+全仓无 `deleted_post` / `before_delete_post` / `delete_term` 钩子。加上内容每次变更都会因 `source_fingerprint` 变化而产生新 identity，旧行既不复用也不回收：
 
-而写入侧（`class-content-translator.php:30`、`class-admin.php:98`）一律使用带序号的分段 key：`post:{id}:post_content:text:{n}`。所以不含任何 HTML 标签的正文（纯段落文本、经典编辑器未开自动 `<p>` 时）读端查的是 `post:{id}:post_content`，永远 miss，回退原文。
+- 删文章 → 行留下（`get_failed_items`/统计里还会出现幽灵条目）；
+- 改文章 → 旧指纹行永久残留，`wp htbd status` 的计数随之失真；
+- 唯一清理手段是后台「清空翻译缓存」（全库 DELETE）。
 
-另外两个连带问题：
+建议：挂 `deleted_post`/`deleted_term` 按 `item_type + item_id` 删除；再加 `wp htbd prune --older-than=30d` 清理指纹已失效的历史行。需要 `class-translation-store.php` 增一个 `delete_items( $item_type, $item_ids )`，用已有的 `item_lookup` 索引即可。
 
-1. `$post_id` 为 0 时（在非主循环上下文调用 `the_content`）会生成 `post:0:post_content` 这种脏 key；
-2. 整段 `esc_html()`：正文中的 `&`、`&amp;`、`©` 会被二次编码，纯文本正文渲染后出现 `&amp;amp;`。
+### P2-4 后台两处 N+1 查询
 
-修复：删掉这个短路分支，统一走 `segments()` 路径（单段文本时 `segments()` 返回 1 个元素，`text_index = 0`，与写端自然对齐）；无 `$post_id` 时直接返回原文。
+1. `class-admin.php:118-159` `get_post_translation_fields()`：对「每个目标语言 × 每个字段 × 每个段落」各发一次 `find_valid()`。一篇 40 段、3 目标语言的文章 ≈ 120+ 次查询，而且**在每次打开编辑页时都会跑**，即使一条译文都没有（先查完再显示「请先生成翻译」）。
+2. `class-admin.php:527-558` `render_translation_column()`：列表每行 × 每个语言一次 `get_post_language_status()`，20 行 × 3 语言 = 60 次。
 
-### P1-2 同一文章可能被排入两个重复翻译任务
+建议：段落用一次 `SELECT ... WHERE item_type='post' AND item_id=%d AND target_language IN (...)` 批量取回再内存匹配（`item_lookup` 索引已覆盖）；列表页用一次 `GROUP BY item_id, target_language` 预取当前页所有 ID。
 
-| 位置 | 调度参数 |
-| --- | --- |
-| `class-content-controller.php:52` | `array( $post_id, $target_language )` |
-| `class-admin.php:333` | `array( $post_id, $target_language, true )` |
+### P2-5 目标语言不做校验，拼错即静默全站不翻译
 
-`wp_next_scheduled()` / `wp_unschedule_event()` 的匹配依据是 `md5(serialize($args))`，2 个参数与 3 个参数是两条不同事件。后果：
+`class-admin.php:205` 只做 `sanitize_key`，不校验是否为百度支持的语言码。用户把 `en` 写成 `eng`，会得到：`/eng/` 路由可访问、`is_supported_language('eng')` 为真、发出去百度回 `58001`（不支持的语言方向）→ store 写入 `failed` 行、前台永远显示中文。诊断面板的 `check_provider()` 只测 `languages[0]`，`/eng/` 排在后面就查不出来。
 
-- `schedule_post_translation()` 的去重判断永远看不到后台排入的事件 → 保存文章会再排一次；
-- `clear_scheduled_event()` 清不掉 2 参数版本 → 清缓存后旧任务仍会跑。
+建议：内置一份百度语言码白名单（`hreflang_code()` 的 map 已覆盖大部分），在 `sanitize_settings()` 里对非法码 `add_settings_error()`；`check_provider()` 改为逐语言测试或至少测「最后一个」。
 
-term 侧同理（`false` vs `true`，参数个数相同但值不同，也是两条事件）。统一成固定 3 参数，或统一在调度函数里做参数规范化。
+## 四、P3 问题
 
-### P1-3 后台操作缺少反馈提示（dead code）
-
-`class-admin.php:348` 与 `:377` 分别重定向到 `?htbd_queued=…`、`?htbd_cache_cleared=…`，但 `render_settings_page()` 里没有任何读取这两个参数的代码，也没有 `admin_notices` 处理器。用户点「重新翻译全部内容」后页面只是刷新了一下，不知道排了多少条、是否成功。
-
-修复：注册 `admin_notices`（限定 `settings_page_htbd`），按 `htbd_queued` 输出 `_n()` 计数提示，按 `htbd_cache_cleared` 输出清理成功提示，并 `remove_query_arg` 避免刷新重复提示。
-
-### P1-4 翻译请求无节流、无批处理、无重试
-
-`class-content-translator.php:30` 对每个文本段发一次 `wp_remote_post`，串行、无间隔。百度通用文本翻译标准版限制 1 QPS，长文（几十段）必然触发 `54003 访问频率受限`，而这些失败会被记为 `failed` 并在后台列出「翻译失败」。
-
-可落地的三步改造：
-
-1. **批处理**：百度支持 `q` 传多行（`\n` 分隔，总长 ≤ 6000 字节），把 N 段合成 1 次请求，响应 `trans_result` 按行返回，`implode("\n", $dst)` 已有此假设，说明原本就设计成多行，只是没启用；
-2. **节流**：串行请求之间 `usleep()`（可配 300–1000ms）或令牌桶；
-3. **重试**：对 `54003`/`52003`/`request_failed` 做指数退避重试 2 次，仍失败再落 `failed`。
-
-### P1-5 `get_term` 全局过滤会污染后台与 REST
-
-`class-content-controller.php:42,277-287`：`get_term` 过滤器返回 `clone $term`，且无条件生效。影响：
-
-- 后台文章列表 / 分类编辑页显示的是译文名，管理员无法确认原文；
-- `$term` 不是同一个对象实例，任何依赖 `===` 或对象缓存的逻辑（含 `WP_Term_Query` 的对象缓存回填）行为微妙；
-- REST / WP-CLI 输出也会变成译文。
-
-建议加语境限制（`! is_admin() && ! wp_doing_ajax() && ! ( defined('REST_REQUEST') && REST_REQUEST ) && ! wp_doing_cron()`），或改为只在渲染层（`single_term_title` / `term_description` / `get_the_terms` 输出处）翻译。
-
-### P1-6（已撤销，审查误判）
-
-初稿判断「`wp-login.php` 不触发 `init`，所以 `/en/wp-login.php` 不会跳回源站」。复查 `wp-settings.php` 后确认：`wp-login.php` 顶部 `require wp-load.php`，而 `wp-settings.php` 末尾无条件执行 `do_action( 'init' )` 与 `do_action( 'wp_loaded' )`，因此 `init` 在该请求中同样会触发，重定向逻辑有效。原文结论作废，无需改动。
-
-## 四、P2 问题
-
-| # | 位置 | 问题 | 建议 |
+| 编号 | 问题 | 位置 | 建议 |
 | --- | --- | --- | --- |
-| 1 | `class-translation-store.php:46` | `find_valid()` 无缓存，标题/摘要/alt/term/链接每次渲染都发 1 条 SQL，归档页轻松几十条 | 加 `wp_cache_get/add`（非持久组，请求内有效）或 `static` 数组，命中率接近 100% |
-| 2 | `class-content-controller.php:338` | 每次 `translated_value()` 都 `new HTBD_Baidu_Provider()` 只为取常量 `baidu-vip-v1`；`HTBD_Settings::get()` 同一请求被调上千次（每次 `wp_parse_args`） | provider 版本改类常量；`HTBD_Settings::get()` 加请求级静态缓存，`update_option` 时清 |
-| 3 | `class-sitemap-controller.php:62` | 用 `wp_safe_remote_get` 请求自己的 `home_url()/sitemap.xml`；单 worker PHP-FPM 会自锁超时；5MB XML 存 `wp_options` transient | 改为内部生成或走 loopback 白名单 + 只缓存 URL 列表（小体积） |
-| 4 | `class-translation-store.php:12` | `install()` 只在激活时跑，无 `htbd_db_version`；重命名 legacy 表后 `dbDelta` 无法补齐旧表结构差异 | 增加版本号 + `plugins_loaded` 升级检查；legacy 迁移改为「建新表 + INSERT SELECT」 |
-| 5 | `class-translation-store.php:64` | `REPLACE` 每次覆盖 `created_at`，且 delete+insert 会消耗自增 ID | 改 `INSERT ... ON DUPLICATE KEY UPDATE`，不更新 `created_at` |
-| 6 | `class-translation-store.php:174,209` | `SUBSTRING_INDEX(field_context,':',2) IN (...)` + `LIKE` 无法走索引；上万 ID 时 SQL 极长 | 增加 `item_type`/`item_id` 两列并建索引，进度统计直接按列聚合 |
-| 7 | `class-content-controller.php:371` | SEO 任务把整段原文塞进 cron args，序列化进 `cron` option | args 只传 `post_id` + 语言 + 上下文，正文在执行时再取 |
-| 8 | `class-baidu-provider.php:75` | `sanitize_key($context)` 会把 `post:12:post_content` 变成 `post12post_content`（冒号被删），与设置页文案「field」不符 | 用 `sanitize_text_field` 或自定义白名单 |
-| 9 | `class-admin.php:154` | 允许 `routing_mode` 为空数组、`target_languages` 为空 → 插件静默失效，无任何提示 | 保存时校验至少一种路由模式 ≥ 1 种目标语言，否则 `add_settings_error` |
-| 10 | `class-settings.php:54` | `is_supported_language('auto')` 在上游为真，`auto` 被当成合法语言参与校验 | 显式排除 `auto` |
-| 11 | `class-admin.php:201` | 密钥回填进 `type=password` 的 `value`，明文出现在后台 HTML | 改为掩码 + 「重新输入密钥」流程，或仅在常量/环境变量存在时隐藏 |
-| 12 | `assets/js/admin.js:111` | 每 5 秒无条件轮询，页面隐藏/任务完成后继续跑；nonce 24h 过期后永久停留在错误提示 | `document.hidden` 暂停、`percent===100 && !failed.length` 停表、错误态指数退避 |
+| P3-1 | `translate_post()` / `translate_term()` 只判 `is_supported_language()`，而该函数对源语言也返回 true，target == source 时会照常调用 API | `class-content-controller.php:61,121` | 加 `$target_language === $settings['source_language']` 早退 |
+| P3-2 | 限速用的是 `private static $last_request`，仅在同一进程内有效；每个 cron 事件是独立进程，跨事件毫无节流 | `class-baidu-provider.php:25,254` | 若在意免费版 1 req/s，用 transient 存上次请求时间戳；否则在 README 里说明"仅单请求内生效" |
+| P3-3 | 诊断面板会同步自请求站点（5s 超时）。这与 sitemap 当初"避免自请求造成单 worker 死锁"的设计相矛盾，且阻塞后台 POST | `class-health-check.php:143-150` | 改为 cron + transient 回填结果，与 sitemap 同一套模式 |
+| P3-4 | 死代码：`htbd_retranslation_batch` 只删不建；`batch_started_at` 进了 AJAX 响应但 `admin.js` 从不读；`register_rewrite_rules()` 是空方法却仍在激活时被调用并触发 `flush_rewrite_rules()` | `class-admin.php:468,514`、`class-language-router.php:85` | 删掉前三者；flush 只在真正注册了规则时保留（或直接删掉，因为本插件靠 `do_parse_request` 剥前缀，不靠 rewrite） |
+| P3-5 | `render_admin_notices()` 直接读 `$_GET` 且无 nonce 校验 | `class-admin.php:45-67` | 纯展示、不改变状态，可接受；若要过 PHPCS 严格规则，加 `// phpcs:ignore` 说明或改走 transient 闪存 |
 
-### 其他零散项
+## 五、测试与验证盲区
 
-- `class-plugin.php:40` 与 `class-settings.php:7` 与 `class-admin.php:170` 三处各自维护一份默认值，容易漂移 → 抽 `HTBD_Settings::defaults()`。
-- `class-admin.php:183-277` 大段单行 HTML echo，可读性与 WPCS 行宽都吃亏 → 用 `?>`/`<?php` 模板化。
-- `class-uninstaller.php:61` 无条件 `DROP TABLE btranslate_translations`，若用户还在用原版插件会误删 → 增加「是否由本插件创建」的标记判断。
-- `class-content-controller.php:223` 的 `$taxonomy` 参数未使用；`class-sitemap-controller.php:7` 的可变状态 `$this->target_language` 建议改为参数传递。
-- 全仓没有任何自动化测试。Provider 接口已经隔离好，是最适合补测试的地方：用 fake provider 覆盖 identity 生成、缓存复用/失效、路由前缀改写、`segments()` 保护 `<pre>/<code>`。`AGENTS.md` 已声明「不引入 Composer 依赖」，至少可以加一个不依赖 WP 的 `tests/` + 手写 runner。
+现有 6 个脚本全部实跑通过（`cron-scheduling` 9 项、`language-router`、`provider-batching`、`sitemap-fallback`、`domain-normalize`、`store-context`），`php -l` 全仓无语法错误，`./build.sh build` 成功产出 zip 并通过全部归档断言（已 `build.sh clean` 清理）。
 
-## 五、新功能建议
+但覆盖面和风险不匹配——**本轮两个 P1 全在测试盲区里**：
 
-按「投入产出比」排序：
+| 缺口 | 建议新增 | 能防住 |
+| --- | --- | --- |
+| 分段编号一致性 | `tests/content-segments.php`：对含 `<pre>`/`<code>`/空白的 HTML，断言 cron / 渲染 / 后台三条路径产出的 `(text, index)` 序列**完全相同** | P1-1 |
+| 路由互斥 | 在 `tests/language-router.php` 追加：绑定域名的语言不得出现在 `subdirectory_languages()`；`/en/` 在绑定场景下的响应 | P1-2 |
+| Service 层 | `tests/translation-service.php`：命中缓存时不调 provider、`force_refresh` 生效、失败时保留旧译文、成功时写 `complete` | 缓存复用/失效回归 |
+| Store 层 | `tests/store-save.php`：`ON DUPLICATE KEY UPDATE` 保留 `created_at`、`split_context` 与索引列一致 | 数据层回归 |
+| 设置清洗 | `tests/settings-sanitize.php`：密钥留空保留旧值、`clear_baidu_secret_key` 生效、非法语言码被拒 | P2-2 / P2-5 |
 
-| 优先级 | 功能 | 说明 | 主要改动点 |
+## 六、下一轮功能建议（按投入产出排序）
+
+| 优先级 | 功能 | 理由 | 主要改动点 |
 | --- | --- | --- | --- |
-| 1 | **hreflang / canonical 输出** | 见 P0-2，补齐 README 已承诺的 SEO 能力；顺便给 sitemap 加 `xhtml:link` alternates | 新增 `class-seo-head.php`，挂 `wp_head`；复用 `router->localized_url()` |
-| 2 | **批量 + 节流 + 重试的翻译管线** | 见 P1-4，直接把 API 调用量降到 1/N，并消灭 `54003` 类失败 | `class-baidu-provider.php` 支持多行 `q`；`class-translation-service.php` 增加 batch 接口 |
-| 3 | **语言切换器** | 目前用户无法在页面间切换语言，只能手改 URL，这是多语言插件最基础的用户路径 | Block（`block.json`）+ `[htbd_language_switcher]` 短代码 + 导航菜单项，输出 `hreflang`/`lang` 属性 |
-| 4 | **WP-CLI 命令** | `wp htbd translate --all --language=en`、`wp htbd status`、`wp htbd export/import`，绕开后台超时，方便迁移与批量运维 | `includes/class-cli.php`，仅 `defined('WP_CLI')` 时加载 |
-| 5 | **术语表 / 不翻译列表** | 品牌名、产品名、代码标识符经常被翻坏，这是用户投诉第一名 | 设置页新增 `glossary` 列表；发送前用占位符保护（`{{HTBD_n}}`），返回后回填 |
-| 6 | **自定义文章类型与分类法** | 目前硬编码 `post`/`page` + `category`/`post_tag`，WooCommerce/自定义 CPT 站点完全用不了 | 设置页多选；`is_translatable_post_type()` 统一判定，替换 4 处硬编码 |
-| 7 | **翻译质量工作流** | 已支持手工改译文，但缺少「原文/译文对照 + 未翻译项高亮 + 批量重试失败项」 | 编辑器侧栏面板（`PluginDocumentSettingPanel`）+ 后台「重试全部失败」按钮 |
-| 8 | **健康检查页** | 一键测试凭据、检测 rewrite 是否刷新、检测 sitemap 是否可达、显示 cron 积压数 | 设置页新增 tab，复用 `HTBD_Baidu_Provider` 发一条最短测试请求 |
+| 1 | **术语表 / 不翻译保护词** | 这是多语言插件投诉率第一的功能（品牌名、产品名、代码标识符被翻坏），且能给 P1 收尾做完整交付 | 设置页新增词表；发送前替换为 `{{HTBD_n}}` 占位符，返回后回填；identity 需包含词表版本，词表变更即失效 |
+| 2 | **翻译质量工作流** | 手工编辑已存在但不可用（P1-1）。补「原文/译文对照 + 未翻译高亮 + 一键重试全部失败」才算闭环 | 修 P1-1 后，用 `PluginDocumentSettingPanel` 重做侧栏；失败列表加「全部重试」 |
+| 3 | **译文生命周期管理** | 对应 P2-3：残留行会拖垮统计与查询 | `deleted_post`/`deleted_term` 钩子 + `wp htbd prune` + 行级 `status='stale'` |
+| 4 | **每语言翻译覆盖率报表** | store 已有 `get_completed_item_counts()` / `get_status_counts()`，只差展示；对"哪些页面还没翻"最有说服力 | 设置页加一张按语言 × 文章类型的矩阵 |
+| 5 | **导航菜单语言项** | 切换器已有 shortcode / block / widget，缺 `wp_nav_menu_items`，而多数主题的语言切换实际挂在菜单里 | 复用 `HTBD_Language_Switcher::links()` |
+| 6 | **结构化数据** | 多语言站点的 `inLanguage` / `WebPage` 标记，SEO 收益直接 | 在 `HTBD_SEO_Head` 增 JSON-LD，跟随 `current_language()` |
 
-## 六、README 变更
+## 七、仓库状态
 
-已完成（`README.md`、`README.zh-CN.md`）：
-
-1. 审核状态由「尚未通过、只能手动安装」改为「已通过并上架 WordPress.org」，附目录链接；
-2. 安装章节新增「方法一：后台直接安装（推荐）」，原 ZIP 上传 / 服务器上传顺延为方法二 / 方法三；
-3. 未改动 `readme.txt`（其中本就没有审核状态描述），因此 `languages/wp-plugins-…-readme-zh-cn.po` 无需同步；若后续改动 `readme.txt` 正文，必须同步该 PO。
-
-## 七、实施状态（1.0.0）
-
-已修复：P0-1（`single_term_title` 参数）、P0-2（hreflang / canonical 补齐）、P1-1（纯文本 key 不一致）、P1-2（cron 参数统一）、P1-3（后台操作提示）、P1-4（批量 + 限速 + 重试）、P1-5（`get_term` 语境限制），以及 P2 中的 `find_valid()` 缓存、`REPLACE` 覆盖 `created_at`、`sanitize_key` 破坏 context、空配置静默失效、`auto` 参与语言校验。
-
-新增功能：hreflang 与 sitemap alternates（功能 1）、批量限速管线（功能 2）、语言切换器（功能 3）、WP-CLI（功能 4）、自定义文章类型与分类法（功能 6）、诊断面板（功能 8）。
-
-剩余项已于同一天全部处理：
-
-- sitemap 自请求 → 改为 `HTBD_Cron::SITEMAP_REFRESH` 异步抓取 + 15 分钟缓存 + 首次请求返回最小 sitemap（`tests/sitemap-fallback.php`）。
-- `SUBSTRING_INDEX` 全表扫描 → 新增 `item_type` / `item_id` 列与 `item_lookup` 索引，进度、失败、列表列查询全部改用索引列。
-- SEO 任务把正文塞进 cron args → 改为 transient 传值，args 只留键名。
-- `install()` 无升级路径 → 新增 `htbd_db_version` 与 `maybe_upgrade()`，升级时 `dbDelta` + 回填历史行。
-- 后台 JS 每 5 秒轮询 → 完成后停表、隐藏暂停、失败指数退避（上限 60s）。
-- 密钥明文回填 → 输出空值 + 占位提示 + 「删除已保存密钥」开关，留空保留旧值。
-- 卸载误删 legacy 数据 → 新增迁移标记，仅在本插件接管过数据时才清理 `btranslate_*`。
-- `normalize_domain` 拒绝本地主机 → 支持 `localhost` 与 IPv4（`tests/domain-normalize.php`）。
-- `the_title` 二次转义 → 改为 `wp_strip_all_tags()` 后返回纯文本。
-
-测试覆盖从 2 个文件扩到 6 个：`provider-batching`、`cron-scheduling`、`sitemap-fallback`、`store-context`、`domain-normalize`、`language-router`。路由层通过假 `HTBD_Settings` 与桩函数覆盖了前缀剥离、子目录与域名 URL 生成、反向还原源站地址、以及从 query var 解析当前语言，共 18 项断言。
-
-`redirect_admin_request_to_source()` 原本因为命中即 `wp_redirect()` + `exit` 而无法断言；本次把它拆成纯函数 `admin_redirect_url()` 与真正执行跳转的薄壳，`language-router` 测试从 18 项扩到 27 项，覆盖语言前缀与绑定域名两种来源、查询参数保留、子目录安装路径、以及不应触发跳转的前台请求与源站请求。至此审查清单中的每一项都有自动化覆盖。
+- `CODE_REVIEW.md` 与 `RELEASE_NOTES-1.0.0.md` 在 v1.0.0 提交里，当前工作区处于**未提交的删除状态**（`git status` 显示两个 `D`）。本轮审查把本文件重写为 v1.0.0 之后的这一轮记录；`RELEASE_NOTES-1.0.0.md` 的删除请自行决定提交或 `git restore`。
+- 版本一致性核对通过：插件头 `Version: 1.0.0`、`HTBD_VERSION`、`readme.txt` 的 `Stable tag`、issue 模板与 SVN workflow 示例均为 1.0.0，无残留旧版本号。
+- `languages/` 三个文件 `msgfmt -c` 全部通过（`zh_CN` 125 条 msgid，readme 中文 PO 62 条 msgid），无 fuzzy/format 错误。

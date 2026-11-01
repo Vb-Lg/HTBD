@@ -21,10 +21,10 @@ msgstr "GitHub 代码仓库"
 
 #. translators: %s: number of queued translation tasks.
 #: includes/class-admin.php:49
-#, fuzzy, php-format
+#, php-format
 msgid "%s translation task has been queued."
 msgid_plural "%s translation tasks have been queued."
-msgstr[0] "暂无翻译任务"
+msgstr[0] "%s 个翻译任务已加入队列。"
 
 #: includes/class-admin.php:59
 msgid "All saved translations have been cleared."
@@ -37,9 +37,8 @@ msgid "Saved %s translations have been cleared."
 msgstr "已清除 %s 的已保存译文。"
 
 #: includes/class-admin.php:72
-#, fuzzy
 msgid "Manual translations"
-msgstr "全量翻译"
+msgstr "人工译文"
 
 #: includes/class-admin.php:80
 msgid "Generate a translation first, then edit it here."
@@ -60,9 +59,8 @@ msgid "Excerpt"
 msgstr "摘要"
 
 #: includes/class-admin.php:125
-#, fuzzy
 msgid "Content"
-msgstr "内容 #%d"
+msgstr "内容"
 
 #: includes/class-admin.php:162
 msgid "HTBD"
@@ -207,9 +205,8 @@ msgid "Delete the stored secret key"
 msgstr "删除已保存的密钥"
 
 #: includes/class-admin.php:290
-#, fuzzy
 msgid "Request interval"
-msgstr "请求日志"
+msgstr "请求间隔"
 
 #: includes/class-admin.php:290
 msgid "milliseconds"
@@ -389,9 +386,8 @@ msgid "No translation task"
 msgstr "暂无翻译任务"
 
 #: includes/class-baidu-provider.php:98
-#, fuzzy
 msgid "Baidu Translate returned an unexpected number of translated lines."
-msgstr "百度翻译返回了无效响应。"
+msgstr "百度翻译返回的译文行数异常。"
 
 #: includes/class-baidu-provider.php:193
 msgid "Baidu Translate credentials are not configured."
@@ -438,9 +434,8 @@ msgid "Run diagnostics"
 msgstr "运行诊断"
 
 #: includes/class-health-check.php:102 includes/class-health-check.php:105
-#, fuzzy
 msgid "Baidu credentials"
-msgstr "百度密钥"
+msgstr "百度凭据"
 
 #: includes/class-health-check.php:102
 msgid "The application ID or the secret key is empty."
@@ -451,9 +446,8 @@ msgid "An application ID and secret key are configured."
 msgstr "已配置 APP ID 与密钥。"
 
 #: includes/class-health-check.php:115 includes/class-health-check.php:118
-#, fuzzy
 msgid "Translation table"
-msgstr "翻译缓存"
+msgstr "翻译数据表"
 
 #. translators: %s: database table name.
 #: includes/class-health-check.php:115
@@ -494,9 +488,8 @@ msgid "No URL mode is enabled, so translated pages are unreachable."
 msgstr "未启用任何 URL 模式，译文的访问地址不可达。"
 
 #: includes/class-health-check.php:139
-#, fuzzy
 msgid "No target language is configured."
-msgstr "目标语言"
+msgstr "未配置目标语言。"
 
 #. translators: 1: URL, 2: error message.
 #: includes/class-health-check.php:156
@@ -524,9 +517,8 @@ msgid "Scheduled tasks"
 msgstr "计划任务"
 
 #: includes/class-health-check.php:181
-#, fuzzy
 msgid "No translation job is queued."
-msgstr "暂无翻译任务"
+msgstr "队列中没有待执行的翻译任务。"
 
 #. translators: 1: queued task count, 2: next run time.
 #: includes/class-health-check.php:190
@@ -550,9 +542,8 @@ msgid "Provider round trip"
 msgstr "服务连通性"
 
 #: includes/class-health-check.php:213
-#, fuzzy
 msgid "Skipped until credentials and a target language are configured."
-msgstr "尚未配置百度翻译凭据。"
+msgstr "在配置凭据和目标语言之前将跳过该项。"
 
 #. translators: 1: error code, 2: error message.
 #: includes/class-health-check.php:223
@@ -603,13 +594,20 @@ msgid "Inline"
 msgstr "行内"
 
 #: includes/class-language-switcher.php:285
-#, fuzzy
 msgid "Show the current language"
-msgstr "源语言"
+msgstr "显示当前语言"
 
 #: includes/class-translation-service.php:88
 msgid "The translation provider returned no result for this field."
 msgstr "翻译服务未返回该字段的结果。"
+
+#: assets/js/language-switcher-block.js:44
+msgid "Format"
+msgstr "显示形式"
+
+#: assets/js/language-switcher-block.js:66
+msgid "HTBD language switcher: rendered on the front end."
+msgstr "HTBD 语言切换器：在前台渲染。"
 
 #~ msgid "https://www.vblg.top"
 #~ msgstr "https://www.vblg.top"

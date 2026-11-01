@@ -590,3 +590,11 @@ msgstr ""
 #: includes/class-translation-service.php:88
 msgid "The translation provider returned no result for this field."
 msgstr ""
+
+#: assets/js/language-switcher-block.js:44
+msgid "Format"
+msgstr ""
+
+#: assets/js/language-switcher-block.js:66
+msgid "HTBD language switcher: rendered on the front end."
+msgstr ""

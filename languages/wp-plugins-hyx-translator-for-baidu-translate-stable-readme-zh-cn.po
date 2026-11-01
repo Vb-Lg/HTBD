@@ -208,6 +208,21 @@ msgstr "同一篇文章的多个文本段会尽量合并为一次百度多行请
 
 #. Found in changelog list item.
 #, gp-priority: low
+msgid "Fix Simplified Chinese labels on the settings and diagnostics screens that displayed a neighbouring string instead of their own."
+msgstr "修复设置页与诊断页上误显示相邻条目译文的简体中文字段。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Fix two Simplified Chinese format strings that dropped or invented a placeholder."
+msgstr "修复两条简体中文格式化字符串丢失或多出占位符的问题。"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Translate the language switcher block inside the editor by loading script translations from a bundled JED JSON file."
+msgstr "通过随插件分发的 JED JSON 文件加载脚本译文，使语言切换器区块在编辑器中显示中文。"
+
+#. Found in changelog list item.
+#, gp-priority: low
 msgid "Add <code>hreflang</code> alternate links on singular views and in localized sitemaps, plus a canonical fallback when the theme removed the core link."
 msgstr "在单页视图与本地化站点地图中新增 <code>hreflang</code> 多语言链接，并在主题移除核心 canonical 链接时提供回退输出。"
 

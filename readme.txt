@@ -2,9 +2,9 @@
 Contributors: hanyixuanten
 Homepage: https://www.vblg.top/index.php/archives/147
 Requires at least: 6.4
-Tested up to: 7.0
+Tested up to: 7.1.4
 Requires PHP: 8.1
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPL-3.0-only
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -66,6 +66,12 @@ Failed posts, pages, categories, or tags appear below the progress bar on the Se
 Uninstalling removes plugin settings, scheduled tasks, and the custom translation table, including all persisted translations.
 
 == Changelog ==
+
+= 1.0.1 =
+
+* Fix Simplified Chinese labels on the settings and diagnostics screens that displayed a neighbouring string instead of their own.
+* Fix two Simplified Chinese format strings that dropped or invented a placeholder.
+* Translate the language switcher block inside the editor by loading script translations from a bundled JED JSON file.
 
 = 1.0.0 =
 

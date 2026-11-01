@@ -240,7 +240,9 @@ for test in tests/*.php; do php "$test" || exit 1; done
 ./build.sh build
 ```
 
-`tests/` 下的检查通过桩函数替换 WordPress 调用，因此在任何装有 PHP 的机器上都能运行，覆盖批量翻译、计划任务参数、站点地图回退、URL 改写、域名归一化与翻译上下文解析。
+`tests/` 下的检查通过桩函数替换 WordPress 调用，因此在任何装有 PHP 的机器上都能运行，覆盖批量翻译、计划任务参数、站点地图回退、URL 改写、域名归一化、翻译上下文解析，以及区块编辑器使用的 PO 到 JED JSON 转换。
+
+脚本译文与 PHP 译文是两条独立通道：区块编辑器通过 `wp_set_script_translations()` 读取 JED JSON，完全不会读取 MO 文件。因此 `build.sh` 会用 `tools/make-json.php` 从 PO 文件生成 `languages/hyx-translator-for-baidu-translate-zh_CN-htbd-language-switcher-block.json`，并在归档中缺少该文件时直接报错退出。也就是说，直接克隆仓库得到的目录里既没有 MO 文件也没有 JSON 文件，必须运行过一次 `./build.sh build`。
 
 ## 问题反馈与贡献
 

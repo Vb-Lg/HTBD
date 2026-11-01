@@ -48,6 +48,13 @@ class HTBD_Language_Switcher {
 			true
 		);
 
+		// Editor strings live in JavaScript, which reads JED JSON and ignores the MO file.
+		wp_set_script_translations(
+			self::EDITOR_JS,
+			'hyx-translator-for-baidu-translate',
+			plugin_dir_path( HTBD_FILE ) . 'languages/'
+		);
+
 		register_block_type(
 			self::BLOCK,
 			array(

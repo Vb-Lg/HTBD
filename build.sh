@@ -4,6 +4,7 @@ set -eu
 
 plugin_slug="hyx-translator-for-baidu-translate"
 plugin_file="${plugin_slug}.php"
+editor_script_handle="htbd-language-switcher-block"
 script_dir="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 build_dir="${script_dir}/build"
 plugin_dir="${build_dir}/${plugin_slug}"
@@ -14,7 +15,7 @@ clean() {
 }
 
 build() {
-	for command in grep sed msgfmt zip unzip; do
+	for command in grep sed msgfmt zip unzip php; do
 		if ! command -v "${command}" >/dev/null 2>&1; then
 			printf 'Required command not found: %s\n' "${command}" >&2
 			exit 1
@@ -41,6 +42,12 @@ build() {
 	msgfmt --check --check-format \
 		--output-file="${plugin_dir}/languages/${plugin_slug}-zh_CN.mo" \
 		"${script_dir}/languages/${plugin_slug}-zh_CN.po"
+	# Script translations are read from JED JSON, never from the PO/MO files.
+	php "${script_dir}/tools/make-json.php" \
+		"${script_dir}/languages/${plugin_slug}-zh_CN.po" \
+		"${plugin_dir}/languages/${plugin_slug}-zh_CN-${editor_script_handle}.json" \
+		zh_CN \
+		"assets/js/language-switcher-block.js"
 	(
 		cd "${build_dir}"
 		zip -qr "${archive_path}" "${plugin_slug}"
@@ -49,6 +56,7 @@ build() {
 	unzip -p "${archive_path}" "${plugin_slug}/${plugin_file}" | grep -q '^ \* Plugin Name: HTBD - hyx Translator powered by Baidu Translate$'
 	unzip -p "${archive_path}" "${plugin_slug}/readme.txt" | grep -q "^Stable tag: ${version}$"
 	unzip -Z1 "${archive_path}" | grep -q "^${plugin_slug}/languages/${plugin_slug}-zh_CN.mo$"
+	unzip -Z1 "${archive_path}" | grep -q "^${plugin_slug}/languages/${plugin_slug}-zh_CN-${editor_script_handle}.json$"
 	if unzip -Z1 "${archive_path}" | grep -q '/wp-plugins-.*\.po$'; then
 		printf 'Unexpected GlotPress submission file found in archive.\n' >&2
 		exit 1

@@ -240,7 +240,9 @@ for test in tests/*.php; do php "$test" || exit 1; done
 ./build.sh build
 ```
 
-The checks in `tests/` stub the WordPress functions they call, so they run on any machine with PHP. They cover translation batching, cron argument normalization, sitemap fallback markup, URL rewriting, domain normalization, and translation context parsing.
+The checks in `tests/` stub the WordPress functions they call, so they run on any machine with PHP. They cover translation batching, cron argument normalization, sitemap fallback markup, URL rewriting, domain normalization, translation context parsing, and the PO to JED JSON conversion used by the block editor.
+
+Script translations are a separate channel from PHP translations. The block editor reads JED JSON through `wp_set_script_translations()` and never consults the MO file, so `build.sh` regenerates `languages/hyx-translator-for-baidu-translate-zh_CN-htbd-language-switcher-block.json` from the PO file with `tools/make-json.php` and fails if the JSON file is missing from the archive. A raw checkout therefore contains neither the MO file nor the JSON file until `./build.sh build` runs.
 
 ## Feedback and Contributions
 

@@ -142,6 +142,24 @@ class HTBD_Language_Router {
 		}
 	}
 
+	/**
+	 * Returns the URL of the current front-end request as the browser sent it,
+	 * including the language prefix or bound domain, so callers can build the
+	 * equivalent URL in another language.
+	 *
+	 * @return string
+	 */
+	public function request_url() {
+		$host = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
+		$uri  = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+
+		if ( '' === $host || '' === $uri ) {
+			return home_url( '/' );
+		}
+
+		return ( is_ssl() ? 'https://' : 'http://' ) . $host . $uri;
+	}
+
 	public function current_language() {
 		$settings = HTBD_Settings::get();
 		$language = get_query_var( 'htbd_language' );

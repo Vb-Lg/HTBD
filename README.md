@@ -51,6 +51,15 @@ Visitors can move between languages without editing the URL:
 
 Each link points at the current page in the selected language, keeps the query string, and marks the active language with `aria-current`.
 
+### Browser Language Suggestion
+
+When the feature is enabled under Settings > HTBD, a visitor whose browser prefers another configured language sees a small dismissible notice offering that version of the current page:
+
+- The suggestion is decided in the browser, so a cached page never carries a notice meant for a different visitor.
+- Nothing is redirected automatically. The notice contains a real link to the same page in the suggested language, and every language keeps its own canonical URL.
+- The choice is remembered in `localStorage`, so a dismissed or accepted suggestion is not repeated for that language.
+- The notice is not rendered for feeds, embeds, previews, 404 responses, or a site with a single language, and it stays hidden when JavaScript is unavailable.
+
 ### Persistent Translations
 
 After a translation is generated, it is stored on the WordPress server. Future requests for the same translation use the stored result instead of calling the Baidu Translate API again.
@@ -240,7 +249,7 @@ for test in tests/*.php; do php "$test" || exit 1; done
 ./build.sh build
 ```
 
-The checks in `tests/` stub the WordPress functions they call, so they run on any machine with PHP. They cover translation batching, cron argument normalization, sitemap fallback markup, URL rewriting, domain normalization, translation context parsing, and the PO to JED JSON conversion used by the block editor.
+The checks in `tests/` stub the WordPress functions they call, so they run on any machine with PHP. They cover translation batching, cron argument normalization, sitemap fallback markup, URL rewriting, domain normalization, translation context parsing, browser language matching, and the PO to JED JSON conversion used by the block editor.
 
 Script translations are a separate channel from PHP translations. The block editor reads JED JSON through `wp_set_script_translations()` and never consults the MO file, so `build.sh` regenerates `languages/hyx-translator-for-baidu-translate-zh_CN-htbd-language-switcher-block.json` from the PO file with `tools/make-json.php` and fails if the JSON file is missing from the archive. A raw checkout therefore contains neither the MO file nor the JSON file until `./build.sh build` runs.
 

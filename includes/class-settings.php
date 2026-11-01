@@ -21,6 +21,7 @@ class HTBD_Settings {
 			'target_languages'           => array( 'en' ),
 			'routing_mode'               => array( 'subdirectory' ),
 			'domain_bindings'            => array(),
+			'browser_language_prompt'    => false,
 			'fallback_language'          => 'zh',
 			'post_types'                 => self::DEFAULT_POST_TYPES,
 			'taxonomies'                 => self::DEFAULT_TAXONOMIES,

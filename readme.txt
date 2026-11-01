@@ -22,6 +22,8 @@ Subdirectory routing supports paths such as `/en/example-post/`. Domain routing 
 
 Singular views print `hreflang` alternate links for every configured language, and localized sitemaps declare the same alternates. A language switcher is available as the `[htbd_language_switcher]` shortcode, the HTBD language switcher block, and a classic widget.
 
+When browser language suggestions are enabled in the settings, a visitor whose browser prefers another configured language sees a dismissible notice linking to the same page in that language. The suggestion is decided in the browser so a cached page stays correct for every visitor, nothing is redirected automatically, and a suggestion the visitor already answered is not repeated.
+
 Text segments of the same post are sent to Baidu as one multi line request where possible, requests are spaced by the configured interval, and transient provider errors are retried. `wp htbd translate`, `wp htbd translate-terms`, `wp htbd status`, `wp htbd export`, and `wp htbd import` are available when WP-CLI is installed.
 
 == Installation ==
@@ -64,6 +66,10 @@ Failed posts, pages, categories, or tags appear below the progress bar on the Se
 = What data is removed during uninstall? =
 
 Uninstalling removes plugin settings, scheduled tasks, and the custom translation table, including all persisted translations.
+
+= Does the plugin redirect visitors automatically? =
+
+No. When browser language suggestions are enabled, visitors whose browser prefers another configured language see a dismissible notice with a link to the same page in that language. The notice is off by default and only contains a link, so every language keeps its own canonical URL and no request is redirected without the visitor choosing to follow it.
 
 == Changelog ==
 

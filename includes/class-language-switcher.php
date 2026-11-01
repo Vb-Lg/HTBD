@@ -200,9 +200,9 @@ class HTBD_Language_Switcher {
 			return array();
 		}
 
-		$current_url     = $this->current_url();
+		$current_url      = $this->router->request_url();
 		$current_language = $this->router->current_language();
-		$links           = array();
+		$links            = array();
 
 		foreach ( $languages as $language ) {
 			$links[] = array(
@@ -220,17 +220,6 @@ class HTBD_Language_Switcher {
 		 * @param array $links Language link data.
 		 */
 		return (array) apply_filters( 'htbd_language_switcher_links', $links );
-	}
-
-	private function current_url() {
-		$host = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
-		$uri  = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-
-		if ( '' === $host || '' === $uri ) {
-			return home_url( '/' );
-		}
-
-		return ( is_ssl() ? 'https://' : 'http://' ) . $host . $uri;
 	}
 }
 

@@ -2,7 +2,7 @@
 # This file is distributed under the same license as the Plugins - HTBD &#8211; hyx Translator powered by Baidu Translate - Stable Readme (latest release) package.
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-10-31 04:30+0000\n"
+"PO-Revision-Date: 2026-11-01 10:00+0000\n"
 "Last-Translator: HTBD contributors\n"
 "Language-Team: Chinese (China)\n"
 "MIME-Version: 1.0\n"
@@ -305,3 +305,15 @@ msgstr "域名绑定支持 <code>localhost</code> 与 IPv4 地址。"
 #, gp-priority: low
 msgid "Poll translation progress only while the queue can still change."
 msgstr "仅在队列仍可能变化时轮询翻译进度。"
+
+#. Found in description paragraph.
+msgid "When browser language suggestions are enabled in the settings, a visitor whose browser prefers another configured language sees a dismissible notice linking to the same page in that language. The suggestion is decided in the browser so a cached page stays correct for every visitor, nothing is redirected automatically, and a suggestion the visitor already answered is not repeated."
+msgstr "在设置中启用浏览器语言提示后，若访客浏览器偏好另一种已配置的语言，页面会显示一条可关闭的提示，链接到该语言下的同一页面。判断在浏览器端完成，因此被缓存的页面对每位访客都保持正确；不会自动跳转，访客已回应过的提示也不会重复出现。"
+
+#. Found in faq header.
+msgid "Does the plugin redirect visitors automatically?"
+msgstr "插件会自动跳转访客吗？"
+
+#. Found in faq paragraph.
+msgid "No. When browser language suggestions are enabled, visitors whose browser prefers another configured language see a dismissible notice with a link to the same page in that language. The notice is off by default and only contains a link, so every language keeps its own canonical URL and no request is redirected without the visitor choosing to follow it."
+msgstr "不会。启用浏览器语言提示后，浏览器偏好另一种已配置语言的访客会看到一条可关闭的提示，其中链接到该语言下的同一页面。该提示默认关闭，且只包含一个链接，因此每种语言都保留自己的规范地址，未经访客选择不会发生跳转。"

@@ -33,6 +33,7 @@ require_once HTBD_PATH . 'includes/class-language-router.php';
 require_once HTBD_PATH . 'includes/class-sitemap-controller.php';
 require_once HTBD_PATH . 'includes/class-seo-head.php';
 require_once HTBD_PATH . 'includes/class-language-switcher.php';
+require_once HTBD_PATH . 'includes/class-language-prompt.php';
 require_once HTBD_PATH . 'includes/class-health-check.php';
 require_once HTBD_PATH . 'includes/class-content-controller.php';
 require_once HTBD_PATH . 'includes/class-admin.php';

@@ -63,6 +63,8 @@ build() {
 	fi
 	unzip -Z1 "${archive_path}" | grep -q "^${plugin_slug}/includes/interface-translation-provider.php$"
 	unzip -Z1 "${archive_path}" | grep -q "^${plugin_slug}/assets/js/admin.js$"
+	unzip -Z1 "${archive_path}" | grep -q "^${plugin_slug}/assets/js/language-prompt.js$"
+	unzip -Z1 "${archive_path}" | grep -q "^${plugin_slug}/assets/css/language-prompt.css$"
 	if unzip -Z1 "${archive_path}" | grep -Eq '/class-btranslate-[^/]+\.php$'; then
 		printf 'Unexpected legacy class filename found in archive.\n' >&2
 		exit 1
